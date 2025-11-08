@@ -14,6 +14,18 @@ function daysAgoIso(days) {
 
 function startServer(db, port = 3000) {
     const app = express();
+    
+    // Enable CORS for development (allows Vite dev server on port 5173 to access API)
+    app.use((req, res, next) => {
+        res.header('Access-Control-Allow-Origin', '*');
+        res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+        res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+        if (req.method === 'OPTIONS') {
+            return res.sendStatus(200);
+        }
+        next();
+    });
+    
     app.use(express.json());
 
     // serve static dashboard from /public
@@ -61,8 +73,18 @@ function startServer(db, port = 3000) {
                 params.push(task);
             }
             if (days) {
-                where.push('datetime(r.played_at) >= datetime(?)');
-                params.push(daysAgoIso(Number(days)));
+                const numDays = Number(days);
+                if (numDays === 1) {
+                    // For "day" filter, use today from midnight (not last 24 hours)
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    where.push('datetime(r.played_at) >= datetime(?)');
+                    params.push(today.toISOString());
+                } else {
+                    // For week/month, use X days ago
+                    where.push('datetime(r.played_at) >= datetime(?)');
+                    params.push(daysAgoIso(numDays));
+                }
             }
 
             const limitClause = limit ? `LIMIT ?` : 'LIMIT 1000';
@@ -98,8 +120,17 @@ function startServer(db, port = 3000) {
             const whereConditions = [];
             
             if (days) {
-                whereConditions.push('datetime(r.played_at) >= datetime(?)');
-                params.push(daysAgoIso(Number(days)));
+                const numDays = Number(days);
+                if (numDays === 1) {
+                    // For "day" filter, use today from midnight
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    whereConditions.push('datetime(r.played_at) >= datetime(?)');
+                    params.push(today.toISOString());
+                } else {
+                    whereConditions.push('datetime(r.played_at) >= datetime(?)');
+                    params.push(daysAgoIso(numDays));
+                }
             }
             
             if (pack_id) {
@@ -271,7 +302,27 @@ function startServer(db, port = 3000) {
     // Task summary (for tasks table)
     app.get('/api/tasks/summary', async (req, res) => {
         try {
-            const { pack_id, limit = 50 } = req.query;
+            const { pack_id, days, limit = 50 } = req.query;
+            
+            // Build time filter
+            let timeFilter = '';
+            const params = [];
+            
+            if (days) {
+                const numDays = Number(days);
+                if (numDays === 1) {
+                    // Today from midnight
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    timeFilter = 'AND datetime(r.played_at) >= datetime(?)';
+                    params.push(today.toISOString());
+                } else {
+                    // X days ago
+                    timeFilter = 'AND datetime(r.played_at) >= datetime(?)';
+                    params.push(daysAgoIso(numDays));
+                }
+            }
+            
             let sql;
             
             if (pack_id) {
@@ -295,16 +346,17 @@ function startServer(db, port = 3000) {
                     FROM tasks t
                     LEFT JOIN pack_tasks pt ON t.id = pt.task_id
                     LEFT JOIN runs r ON r.task_id = t.id
-                    WHERE pt.pack_id = ?
+                    WHERE pt.pack_id = ? ${timeFilter}
                     GROUP BY t.id
                     HAVING runs > 0
                     ORDER BY last_played DESC NULLS LAST, runs DESC
                     LIMIT ?
                 `;
-                const rows = await db.all(sql, [pack_id, Number(limit)]);
+                const rows = await db.all(sql, [pack_id, ...params, Number(limit)]);
                 res.json(rows);
             } else {
                 // Show all tasks with actual runs
+                const whereClause = timeFilter ? `WHERE ${timeFilter.replace('AND ', '')}` : '';
                 sql = `
                     SELECT 
                         t.name AS task_name,
@@ -323,12 +375,13 @@ function startServer(db, port = 3000) {
                         MAX(r.played_at) AS last_played
                     FROM tasks t
                     LEFT JOIN runs r ON r.task_id = t.id
+                    ${whereClause}
                     GROUP BY t.id
                     HAVING runs > 0
                     ORDER BY last_played DESC NULLS LAST, runs DESC
                     LIMIT ?
                 `;
-                const rows = await db.all(sql, [Number(limit)]);
+                const rows = await db.all(sql, [...params, Number(limit)]);
                 res.json(rows);
             }
         } catch (e) {
@@ -346,7 +399,18 @@ function startServer(db, port = 3000) {
             const params = [];
             
             if (days) {
-                whereConditions.push(`r.played_at >= datetime('now', '-${parseInt(days)} days')`);
+                const numDays = parseInt(days);
+                if (numDays === 1) {
+                    // For "day" filter, use today from midnight
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    whereConditions.push('datetime(r.played_at) >= datetime(?)');
+                    params.push(today.toISOString());
+                } else {
+                    // For week/month, use X days ago
+                    whereConditions.push('datetime(r.played_at) >= datetime(?)');
+                    params.push(daysAgoIso(numDays));
+                }
             }
             
             if (pack_id) {
@@ -383,13 +447,27 @@ function startServer(db, port = 3000) {
         }
     });
 
-    // Best sensitivity settings for a task (based on highest score run)
+    // Best sensitivity settings for a task (based on filter criteria)
     app.get('/api/tasks/:taskName/best-settings', async (req, res) => {
         try {
             const { taskName } = req.params;
+            const { filterBy = 'score' } = req.query; // score, accuracy, or ttk
             
-            // Find the run with the highest score for this task
-            const bestRun = await db.get(`
+            // Determine ORDER BY clause and column based on filter
+            let orderBy, whereColumn;
+            if (filterBy === 'accuracy') {
+                orderBy = 'r.accuracy DESC';
+                whereColumn = 'r.accuracy';
+            } else if (filterBy === 'ttk') {
+                orderBy = 'r.avg_ttk ASC'; // Lower TTK is better
+                whereColumn = 'r.avg_ttk';
+            } else {
+                orderBy = 'r.score DESC';
+                whereColumn = 'r.score';
+            }
+            
+            // Find the best run for this task based on filter
+            const query = `
                 SELECT 
                     r.score,
                     r.accuracy,
@@ -407,10 +485,11 @@ function startServer(db, port = 3000) {
                     t.name AS task_name
                 FROM runs r
                 JOIN tasks t ON r.task_id = t.id
-                WHERE t.name = ?
-                ORDER BY r.score DESC
+                WHERE t.name = ? AND ${whereColumn} IS NOT NULL
+                ORDER BY ${orderBy}
                 LIMIT 1
-            `, [taskName]);
+            `;
+            const bestRun = await db.get(query, [taskName]);
             
             if (!bestRun) {
                 return res.json(null);
@@ -420,6 +499,54 @@ function startServer(db, port = 3000) {
         } catch (e) {
             console.error(e);
             res.status(500).json({ error: 'best settings lookup failed' });
+        }
+    });
+
+    // Get runs for a specific day (for day-to-day comparison)
+    app.get('/api/runs/by-day', async (req, res) => {
+        try {
+            const { day } = req.query; // 'today' or 'yesterday'
+            
+            let targetDate;
+            const now = new Date();
+            
+            if (day === 'today') {
+                // Get today's date in YYYY-MM-DD format
+                targetDate = now.toISOString().split('T')[0];
+            } else if (day === 'yesterday') {
+                // Get yesterday's date in YYYY-MM-DD format
+                const yesterday = new Date(now);
+                yesterday.setDate(yesterday.getDate() - 1);
+                targetDate = yesterday.toISOString().split('T')[0];
+            } else {
+                return res.status(400).json({ error: 'Invalid day parameter. Use "today" or "yesterday"' });
+            }
+            
+            console.log(`📊 Fetching runs for ${day} (${targetDate})`);
+            
+            const runs = await db.all(`
+                SELECT 
+                    r.id,
+                    r.score,
+                    r.accuracy,
+                    r.avg_ttk,
+                    r.shots,
+                    r.hits,
+                    r.duration,
+                    r.played_at,
+                    t.name AS task_name
+                FROM runs r
+                JOIN tasks t ON r.task_id = t.id
+                WHERE DATE(r.played_at) = ?
+                ORDER BY r.played_at DESC
+            `, [targetDate]);
+            
+            console.log(`   Found ${runs.length} runs for ${targetDate}`);
+            
+            res.json(runs);
+        } catch (e) {
+            console.error('Error fetching runs by day:', e);
+            res.status(500).json({ error: 'Failed to fetch runs by day' });
         }
     });
 
@@ -606,6 +733,7 @@ function startServer(db, port = 3000) {
             
             const statsFolder = await settings.getSetting(db, 'stats_folder', '');
             const playlistsFolder = await settings.getSetting(db, 'playlists_folder', '');
+            const theme = await settings.getSetting(db, 'theme', 'default');
             const autoGoals = await settings.getSettingBoolean(db, 'auto_goals', true);
             const notifications = await settings.getSettingBoolean(db, 'notifications', true);
             const darkMode = await settings.getSettingBoolean(db, 'dark_mode', true);
@@ -614,6 +742,7 @@ function startServer(db, port = 3000) {
                 username,
                 statsFolder,
                 playlistsFolder,
+                theme,
                 autoGoals,
                 notifications,
                 darkMode
@@ -626,7 +755,7 @@ function startServer(db, port = 3000) {
 
     app.post('/api/settings', async (req, res) => {
         try {
-            const { username, statsFolder, playlistsFolder, autoGoals, notifications, darkMode } = req.body;
+            const { username, statsFolder, playlistsFolder, theme, autoGoals, notifications, darkMode } = req.body;
             
             if (username !== undefined) {
                 // Update username in users table (used by profile page)
@@ -640,6 +769,9 @@ function startServer(db, port = 3000) {
             }
             if (playlistsFolder !== undefined) {
                 await settings.setSetting(db, 'playlists_folder', playlistsFolder);
+            }
+            if (theme !== undefined) {
+                await settings.setSetting(db, 'theme', theme);
             }
             if (autoGoals !== undefined) {
                 await settings.setSetting(db, 'auto_goals', autoGoals ? 'true' : 'false');

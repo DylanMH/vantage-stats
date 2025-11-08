@@ -19,10 +19,12 @@ export default function TasksTable({
     rows,
     onFilter,
     onSelectTask,
+    hideFilter = false,
 }: {
     rows: TaskRow[];
     onFilter?: (q: string) => void;
     onSelectTask?: (taskName: string) => void;
+    hideFilter?: boolean;
 }) {
     const handleViewTask = (taskName: string) => {
         // Instead of opening modal, trigger the filter
@@ -34,11 +36,13 @@ export default function TasksTable({
             <Section
                 title="Tasks"
                 action={
-                    <input
-                        placeholder="Filter tasks..."
-                        onChange={(e) => onFilter?.(e.target.value)}
-                        className="w-60 max-w-full bg-[#0f1320] border border-[--color-border] text-[--color-text] px-3 py-1.5 rounded-lg outline-none"
-                    />
+                    !hideFilter && onFilter ? (
+                        <input
+                            placeholder="Filter tasks..."
+                            onChange={(e) => onFilter(e.target.value)}
+                            className="w-60 max-w-full bg-[#0f1320] border border-[--color-border] text-[--color-text] px-3 py-1.5 rounded-lg outline-none"
+                        />
+                    ) : undefined
                 }
             >
                 <div className="overflow-auto">

@@ -1,6 +1,9 @@
 import { useState, useEffect } from "react";
 import { useQuery, getApiUrl } from "../hooks/useApi";
 import Toast from "../components/Toast";
+import { useTheme } from "../hooks/useTheme";
+import { themes } from "../themes";
+import type { ThemeName } from "../themes";
 
 // Extend Window type for Electron
 declare global {
@@ -25,12 +28,12 @@ type ToastMessage = {
 };
 
 export default function Settings() {
+  const { currentTheme, setTheme } = useTheme();
   const [username, setUsername] = useState("Player");
   const [statsFolder, setStatsFolder] = useState("");
   const [playlistsFolder, setPlaylistsFolder] = useState("");
   const [notifications, setNotifications] = useState(true);
   const [autoGoals, setAutoGoals] = useState(true);
-  const [darkMode, setDarkMode] = useState(true);
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const [editingFolder, setEditingFolder] = useState(false);
   const [tempFolder, setTempFolder] = useState("");
@@ -51,14 +54,13 @@ export default function Settings() {
         setPlaylistsFolder(data.playlistsFolder || '');
         setAutoGoals(data.autoGoals ?? true);
         setNotifications(data.notifications ?? true);
-        setDarkMode(data.darkMode ?? true);
       }
     } catch (err) {
       console.error('Failed to load settings:', err);
     }
   };
 
-  const saveSettings = async (updates: Partial<{username: string; statsFolder: string; playlistsFolder: string; autoGoals: boolean; notifications: boolean; darkMode: boolean}>) => {
+  const saveSettings = async (updates: Partial<{username: string; statsFolder: string; playlistsFolder: string; autoGoals: boolean; notifications: boolean}>) => {
     try {
       const response = await fetch(getApiUrl('/api/settings'), {
         method: 'POST',
@@ -92,12 +94,6 @@ export default function Settings() {
     const newValue = !notifications;
     setNotifications(newValue);
     saveSettings({ notifications: newValue });
-  };
-
-  const handleToggleDarkMode = () => {
-    const newValue = !darkMode;
-    setDarkMode(newValue);
-    saveSettings({ darkMode: newValue });
   };
 
   const handleEditFolder = async () => {
@@ -154,7 +150,7 @@ export default function Settings() {
   const handleClearData = async () => {
     // Show warning toast first
     setToast({ 
-      message: '⚠️ WARNING: This will permanently delete ALL your data! Click Clear Data again within 5 seconds to confirm.', 
+      message: 'WARNING: This will permanently delete ALL your data! Click Clear Data again within 5 seconds to confirm.', 
       type: 'warning' 
     });
     
@@ -384,11 +380,11 @@ export default function Settings() {
       )}
 
       {/* Profile Settings */}
-      <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-white">Profile Settings</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#9aa4b2] mb-2">
+            <label className="block text-sm font-medium text-theme-muted mb-2">
               Username
             </label>
             <input
@@ -396,27 +392,27 @@ export default function Settings() {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               onBlur={handleUsernameBlur}
-              className="w-full px-3 py-2 bg-[#1b2440] border border-[#2d3561] rounded-lg text-white placeholder-[#9aa4b2] focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-theme-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
         </div>
       </div>
 
       {/* Stats Folder Settings */}
-      <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-white">Stats Folder</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#9aa4b2] mb-2">
+            <label className="block text-sm font-medium text-theme-muted mb-2">
               Current Stats Folder Path
             </label>
             <div className="flex items-center gap-2">
-              <div className="flex-1 px-3 py-2 bg-[#1b2440] border border-[#2d3561] rounded-lg text-white break-all">
+              <div className="flex-1 px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-white break-all">
                 {statsFolder || 'Not set'}
               </div>
               <button
                 onClick={handleEditFolder}
-                className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
+                className="px-4 py-2 bg-theme-accent bg-theme-accent-hover text-white rounded-lg text-sm font-medium transition-colors whitespace-nowrap"
               >
                 Browse
               </button>
@@ -428,7 +424,7 @@ export default function Settings() {
                   value={tempFolder}
                   onChange={(e) => setTempFolder(e.target.value)}
                   placeholder="Enter stats folder path"
-                  className="w-full px-3 py-2 bg-[#1b2440] border border-[#2d3561] rounded-lg text-white placeholder-[#9aa4b2] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-theme-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
                 <div className="flex gap-2">
                   <button
@@ -439,15 +435,15 @@ export default function Settings() {
                   </button>
                   <button
                     onClick={handleCancelEditFolder}
-                    className="px-4 py-2 bg-[#1b2440] hover:bg-[#2d3561] text-white rounded-lg text-sm font-medium transition-colors"
+                    className="px-4 py-2 bg-theme-tertiary hover:bg-theme-secondary text-white rounded-lg text-sm font-medium transition-colors"
                   >
                     Cancel
                   </button>
                 </div>
               </div>
             )}
-            <div className="flex items-center justify-between mt-3 pt-3 border-t border-[#1b2440]">
-              <p className="text-xs text-[#9aa4b2]">
+            <div className="flex items-center justify-between mt-3 pt-3 border-t border-theme-primary">
+              <p className="text-xs text-theme-muted">
                 Path to your Kovaaks FPSAimTrainer\stats folder
               </p>
               <button
@@ -455,10 +451,10 @@ export default function Settings() {
                 disabled={isRescanning || !statsFolder}
                 className="px-4 py-2 bg-green-500 hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg text-sm font-medium transition-colors"
               >
-                {isRescanning ? '🔄 Scanning...' : '🔄 Rescan Folder'}
+                {isRescanning ? 'Scanning...' : 'Rescan Folder'}
               </button>
             </div>
-            <p className="text-xs text-[#9aa4b2] mt-2">
+            <p className="text-xs text-theme-muted mt-2">
               Click "Rescan Folder" to re-import all CSVs from this directory
             </p>
           </div>
@@ -466,15 +462,15 @@ export default function Settings() {
       </div>
 
       {/* Playlists Folder Settings */}
-      <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-white">Playlists Folder</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#9aa4b2] mb-2">
+            <label className="block text-sm font-medium text-theme-muted mb-2">
               Current Playlists Folder Path
             </label>
             <div className="flex items-center gap-2">
-              <div className="flex-1 px-3 py-2 bg-[#1b2440] border border-[#2d3561] rounded-lg text-white break-all">
+              <div className="flex-1 px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-white break-all">
                 {playlistsFolder || 'Not set (Optional)'}
               </div>
               <button
@@ -484,26 +480,86 @@ export default function Settings() {
                 Browse
               </button>
             </div>
-            <p className="text-xs text-[#9aa4b2] mt-2">
+            <p className="text-xs text-theme-muted mt-2">
               Path to your Kovaaks playlist JSON files folder (used for importing playlists as packs)
             </p>
           </div>
         </div>
       </div>
 
+      {/* Theme Settings */}
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
+        <h2 className="text-xl font-bold mb-4 text-white">Theme</h2>
+        <div className="space-y-4">
+          <p className="text-sm text-theme-muted mb-4">
+            Choose your preferred visual theme
+          </p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Object.values(themes).map((theme) => (
+              <button
+                key={theme.name}
+                onClick={() => setTheme(theme.name as ThemeName)}
+                className={`p-4 rounded-lg border-2 transition-all ${
+                  currentTheme === theme.name
+                    ? 'border-theme-accent bg-theme-tertiary'
+                    : 'border-theme-secondary bg-theme-secondary hover:border-theme-primary'
+                }`}
+              >
+                <div className="text-left">
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    {theme.displayName}
+                  </h3>
+                  
+                  {/* Theme preview circles */}
+                  <div className="flex gap-2 mb-3">
+                    <div 
+                      className="w-8 h-8 rounded-full border border-white/20" 
+                      style={{ backgroundColor: theme.colors.accentPrimary }}
+                      title="Primary Accent"
+                    />
+                    <div 
+                      className="w-8 h-8 rounded-full border border-white/20" 
+                      style={{ backgroundColor: theme.colors.chartScore }}
+                      title="Score"
+                    />
+                    <div 
+                      className="w-8 h-8 rounded-full border border-white/20" 
+                      style={{ backgroundColor: theme.colors.chartAccuracy }}
+                      title="Accuracy"
+                    />
+                    <div 
+                      className="w-8 h-8 rounded-full border border-white/20" 
+                      style={{ backgroundColor: theme.colors.chartTTK }}
+                      title="TTK"
+                    />
+                  </div>
+                  
+                  {currentTheme === theme.name && (
+                    <div className="text-sm text-theme-accent font-medium">
+                      ✓ Active
+                    </div>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* Goal Settings */}
-      <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-white">Goal Settings</h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-white">Auto-generate Goals</p>
-              <p className="text-sm text-[#9aa4b2]">Automatically create goals based on your performance</p>
+              <p className="text-sm text-theme-muted">Automatically create goals based on your performance</p>
             </div>
             <button
               onClick={handleToggleAutoGoals}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                autoGoals ? "bg-blue-500" : "bg-[#1b2440]"
+                autoGoals ? "bg-theme-accent" : "bg-theme-tertiary"
               }`}
             >
               <span
@@ -517,18 +573,18 @@ export default function Settings() {
       </div>
 
       {/* Notification Settings */}
-      <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-white">Notifications</h2>
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <p className="font-medium text-white">Goal Notifications</p>
-              <p className="text-sm text-[#9aa4b2]">Get notified when you complete goals</p>
+              <p className="text-sm text-theme-muted">Get notified when you complete goals</p>
             </div>
             <button
               onClick={handleToggleNotifications}
               className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                notifications ? "bg-blue-500" : "bg-[#1b2440]"
+                notifications ? "bg-theme-accent" : "bg-theme-tertiary"
               }`}
             >
               <span
@@ -541,47 +597,22 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Appearance */}
-      <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4 text-white">Appearance</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium text-white">Dark Mode</p>
-              <p className="text-sm text-[#9aa4b2]">Use dark theme (currently always enabled)</p>
-            </div>
-            <button
-              onClick={handleToggleDarkMode}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                darkMode ? "bg-blue-500" : "bg-[#1b2440]"
-              }`}
-            >
-              <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                  darkMode ? "translate-x-6" : "translate-x-1"
-                }`}
-              />
-            </button>
-          </div>
-        </div>
-      </div>
-
       {/* Pack Management */}
-      <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-white">Pack Management</h2>
         <div className="space-y-4">
           {packs && packs.length > 0 ? (
             packs.map(pack => (
-              <div key={pack.id} className="bg-[#0f1320] border border-[#1d2230] rounded-lg p-4">
+              <div key={pack.id} className="bg-theme-hover border border-theme-secondary rounded-lg p-4">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <h3 className="text-lg font-semibold text-white">{pack.name}</h3>
                     {pack.description && (
-                      <p className="text-sm text-[#9aa4b2] mt-1">{pack.description}</p>
+                      <p className="text-sm text-theme-muted mt-1">{pack.description}</p>
                     )}
-                    <div className="flex items-center gap-4 mt-2 text-xs text-[#9aa4b2]">
+                    <div className="flex items-center gap-4 mt-2 text-xs text-theme-muted">
                       {pack.game_focus && (
-                        <span className="px-2 py-1 bg-blue-500/20 text-blue-400 rounded">
+                        <span className="px-2 py-1 bg-theme-accent/20 text-theme-accent rounded">
                           {pack.game_focus}
                         </span>
                       )}
@@ -598,7 +629,7 @@ export default function Settings() {
               </div>
             ))
           ) : (
-            <div className="text-center py-8 text-[#9aa4b2]">
+            <div className="text-center py-8 text-theme-muted">
               <p>No custom packs yet. Create one below!</p>
             </div>
           )}
@@ -606,14 +637,14 @@ export default function Settings() {
       </div>
 
       {/* Data Management */}
-      <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-white">Data Management</h2>
         <div className="space-y-4">
           <div>
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium text-white">Clear All Data</p>
-                <p className="text-sm text-[#9aa4b2]">Delete all stored statistics and goals</p>
+                <p className="text-sm text-theme-muted">Delete all stored statistics and goals</p>
               </div>
               <button 
                 onClick={handleClearData}
@@ -628,14 +659,14 @@ export default function Settings() {
               className="mt-3 px-4 py-2 bg-red-700 hover:bg-red-800 text-white rounded-lg text-sm font-medium transition-colors w-full"
               style={{ display: 'none' }}
             >
-              ⚠️ CONFIRM: Yes, delete everything!
+CONFIRM: Yes, delete everything!
             </button>
           </div>
         </div>
       </div>
 
       {/* Pack Creation */}
-      <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-white">Create Custom Pack</h2>
           <div className="flex gap-2">
@@ -649,7 +680,7 @@ export default function Settings() {
             </button>
             <button
               onClick={() => setShowPackCreator(!showPackCreator)}
-              className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-theme-accent bg-theme-accent-hover text-white rounded-lg text-sm font-medium transition-colors"
             >
               {showPackCreator ? 'Cancel' : 'New Pack'}
             </button>
@@ -657,9 +688,9 @@ export default function Settings() {
         </div>
         
         {showPackCreator && (
-          <div className="space-y-4 border-t border-[#1b2440] pt-4">
+          <div className="space-y-4 border-t border-theme-primary pt-4">
             <div>
-              <label className="block text-sm font-medium text-[#9aa4b2] mb-2">
+              <label className="block text-sm font-medium text-theme-muted mb-2">
                 Pack Name *
               </label>
               <input
@@ -667,12 +698,12 @@ export default function Settings() {
                 value={packName}
                 onChange={(e) => setPackName(e.target.value)}
                 placeholder="e.g., My Valorant Routine"
-                className="w-full px-3 py-2 bg-[#1b2440] border border-[#2d3561] rounded-lg text-white placeholder-[#9aa4b2] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-theme-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-[#9aa4b2] mb-2">
+              <label className="block text-sm font-medium text-theme-muted mb-2">
                 Description
               </label>
               <input
@@ -680,12 +711,12 @@ export default function Settings() {
                 value={packDescription}
                 onChange={(e) => setPackDescription(e.target.value)}
                 placeholder="Optional description of your pack"
-                className="w-full px-3 py-2 bg-[#1b2440] border border-[#2d3561] rounded-lg text-white placeholder-[#9aa4b2] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-theme-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-[#9aa4b2] mb-2">
+              <label className="block text-sm font-medium text-theme-muted mb-2">
                 Game Focus
               </label>
               <input
@@ -693,12 +724,12 @@ export default function Settings() {
                 value={packGame}
                 onChange={(e) => setPackGame(e.target.value)}
                 placeholder="e.g., Valorant, CS:GO, Custom"
-                className="w-full px-3 py-2 bg-[#1b2440] border border-[#2d3561] rounded-lg text-white placeholder-[#9aa4b2] focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-theme-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-[#9aa4b2] mb-2">
+              <label className="block text-sm font-medium text-theme-muted mb-2">
                 Task Names * (one per line)
               </label>
               <textarea
@@ -706,9 +737,9 @@ export default function Settings() {
                 onChange={(e) => setPackTasks(e.target.value)}
                 placeholder="Tile Frenzy&#10;1wall6targets TE&#10;Close Strafes&#10;Long Strafes"
                 rows={6}
-                className="w-full px-3 py-2 bg-[#1b2440] border border-[#2d3561] rounded-lg text-white placeholder-[#9aa4b2] focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+                className="w-full px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-theme-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
               />
-              <p className="text-xs text-[#9aa4b2] mt-1">
+              <p className="text-xs text-theme-muted mt-1">
                 Enter the exact task names as they appear in Kovaaks, one per line
               </p>
             </div>
@@ -728,7 +759,7 @@ export default function Settings() {
                   setPackGame("");
                   setPackTasks("");
                 }}
-                className="px-4 py-2 bg-[#1b2440] hover:bg-[#2d3561] text-white rounded-lg text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-theme-tertiary hover:bg-theme-secondary text-white rounded-lg text-sm font-medium transition-colors"
               >
                 Cancel
               </button>
@@ -738,16 +769,16 @@ export default function Settings() {
       </div>
 
       {/* About */}
-      <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-white">About</h2>
         <div className="space-y-2 text-sm">
-          <p className="text-[#9aa4b2]">
-            <span className="font-medium text-white">Kovaaks Insight</span> v0.0.1
+          <p className="text-theme-muted">
+            <span className="font-medium text-white">Kovaaks Insight</span> v1.0.0
           </p>
-          <p className="text-[#9aa4b2]">
+          <p className="text-theme-muted">
             A comprehensive stat tracker for Kovaaks Aim Trainer with goals, coaching, and packs.
           </p>
-          <p className="text-[#9aa4b2]">
+          <p className="text-theme-muted">
             Built with Electron, React, and SQLite3.
           </p>
         </div>

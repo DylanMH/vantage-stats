@@ -39,6 +39,7 @@ type ChartHostProps = {
     height?: number;
     taskName?: string;
     packId?: string;
+    timeframe?: string; // 'day', 'week', 'month', 'overall'
 };
 
 // Calculate moving average for smoothing
@@ -56,9 +57,10 @@ const calculateMovingAverage = (data: number[], windowSize: number = 10): number
     return result;
 };
 
-export default function ChartHost({ title, height = 400, taskName, packId }: ChartHostProps) {
+export default function ChartHost({ title, height = 400, taskName, packId, timeframe = 'overall' }: ChartHostProps) {
     const [chartData, setChartData] = useState<ChartData[]>([]);
     const [bestSettings, setBestSettings] = useState<BestSettings | null>(null);
+    const [bestFilter, setBestFilter] = useState<'score' | 'accuracy' | 'ttk'>('score');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showBestModal, setShowBestModal] = useState(false);
@@ -68,15 +70,33 @@ export default function ChartHost({ title, height = 400, taskName, packId }: Cha
     useEffect(() => {
         fetchChartData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [taskName, packId]);
+    }, [taskName, packId, bestFilter, timeframe]);
+
+    const getTimeframeDays = () => {
+        switch (timeframe) {
+            case 'day': return 1;
+            case 'week': return 7;
+            case 'month': return 30;
+            case 'overall': return null;
+            default: return null;
+        }
+    };
 
     const fetchChartData = async () => {
         setLoading(true);
         setError(null);
         
         try {
+            const days = getTimeframeDays();
+            
             if (taskName) {
-                const runsResponse = await fetch(getApiUrl(`/api/runs?task=${encodeURIComponent(taskName)}&limit=100`));
+                // Build URL with optional days parameter
+                let url = `/api/runs?task=${encodeURIComponent(taskName)}&limit=100`;
+                if (days !== null) {
+                    url += `&days=${days}`;
+                }
+                
+                const runsResponse = await fetch(getApiUrl(url));
                 if (runsResponse.ok) {
                     const data = await runsResponse.json();
                     setChartData(data);
@@ -84,16 +104,19 @@ export default function ChartHost({ title, height = 400, taskName, packId }: Cha
                     setError('Failed to fetch task data');
                 }
                 
-                const settingsResponse = await fetch(getApiUrl(`/api/tasks/${encodeURIComponent(taskName)}/best-settings`));
+                const settingsResponse = await fetch(getApiUrl(`/api/tasks/${encodeURIComponent(taskName)}/best-settings?filterBy=${bestFilter}`));
                 if (settingsResponse.ok) {
                     const settings = await settingsResponse.json();
                     setBestSettings(settings);
                 }
             } else {
-                // Build query string with optional pack_id
+                // Build query string with optional pack_id and days
                 const params = new URLSearchParams();
                 if (packId) {
                     params.append('pack_id', packId);
+                }
+                if (days !== null) {
+                    params.append('days', days.toString());
                 }
                 const queryString = params.toString();
                 const url = queryString ? `/api/stats/history?${queryString}` : `/api/stats/history`;
@@ -195,16 +218,43 @@ export default function ChartHost({ title, height = 400, taskName, packId }: Cha
                     </div>
                 ) : (
                     <div className="h-full space-y-6 overflow-y-auto">
+                        {/* Best Performance Filter Selector */}
+                        {taskName && (
+                            <div className="flex items-center gap-3">
+                                <label className="text-sm font-medium text-theme-muted">Show Best:</label>
+                                <select
+                                    value={bestFilter}
+                                    onChange={(e) => setBestFilter(e.target.value as 'score' | 'accuracy' | 'ttk')}
+                                    className="px-3 py-1.5 bg-theme-tertiary border border-theme-secondary rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-theme-accent"
+                                >
+                                    <option value="score">Highest Score</option>
+                                    <option value="accuracy">Best Accuracy</option>
+                                    <option value="ttk">Fastest TTK</option>
+                                </select>
+                            </div>
+                        )}
+                        
                         {/* Best Performance Settings with View button */}
                         {bestSettings && (bestSettings.dpi || bestSettings.sens_h || bestSettings.fov) && (
                             <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-lg p-4">
                                 <div className="flex items-center justify-between mb-3">
                                     <h4 className="text-sm font-semibold text-purple-300 flex items-center gap-2">
-                                        <span>🎯</span>
                                         Best Performance Settings
-                                        <span className="text-xs text-[#9aa4b2] font-normal ml-2">
-                                            (Score: {bestSettings.score?.toLocaleString()} | {bestSettings.accuracy?.toFixed(1)}% Accuracy)
-                                        </span>
+                                        {bestFilter === 'score' && (
+                                            <span className="text-xs text-theme-muted font-normal ml-2">
+                                                (Score: {bestSettings.score?.toLocaleString()} | {bestSettings.accuracy?.toFixed(1)}% Accuracy)
+                                            </span>
+                                        )}
+                                        {bestFilter === 'accuracy' && (
+                                            <span className="text-xs text-theme-muted font-normal ml-2">
+                                                ({bestSettings.accuracy?.toFixed(1)}% Accuracy | Score: {bestSettings.score?.toLocaleString()})
+                                            </span>
+                                        )}
+                                        {bestFilter === 'ttk' && (
+                                            <span className="text-xs text-theme-muted font-normal ml-2">
+                                                (TTK: {bestSettings.avg_ttk?.toFixed(3)}s | Score: {bestSettings.score?.toLocaleString()})
+                                            </span>
+                                        )}
                                     </h4>
                                     <button
                                         onClick={() => setShowBestModal(true)}
@@ -217,19 +267,19 @@ export default function ChartHost({ title, height = 400, taskName, packId }: Cha
                                     {bestSettings.dpi && (
                                         <div>
                                             <p className="text-lg font-bold text-white">{bestSettings.dpi}</p>
-                                            <p className="text-xs text-[#9aa4b2]">DPI</p>
+                                            <p className="text-xs text-theme-muted">DPI</p>
                                         </div>
                                     )}
                                     {bestSettings.sens_h && (
                                         <div>
                                             <p className="text-lg font-bold text-white">{bestSettings.sens_h.toFixed(3)}</p>
-                                            <p className="text-xs text-[#9aa4b2]">Sensitivity</p>
+                                            <p className="text-xs text-theme-muted">Sensitivity</p>
                                         </div>
                                     )}
                                     {bestSettings.fov && (
                                         <div>
                                             <p className="text-lg font-bold text-white">{bestSettings.fov}°</p>
-                                            <p className="text-xs text-[#9aa4b2]">FOV</p>
+                                            <p className="text-xs text-theme-muted">FOV</p>
                                         </div>
                                     )}
                                 </div>
@@ -238,24 +288,40 @@ export default function ChartHost({ title, height = 400, taskName, packId }: Cha
 
                         {/* Performance Charts with Interactive Tooltips */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="bg-[#0f1320] border border-[#1d2230] rounded-lg p-4">
+                            <div className="bg-theme-hover border border-theme-secondary rounded-lg p-4">
                                 <h4 className="text-sm font-semibold text-white mb-3">Score Over Time</h4>
                                 <div className="h-32">
-                                    <Chart data={scoreData} color="#8b5cf6" label="Score" onPointClick={(date) => handleDateClick(date)} />
+                                    <Chart 
+                                        data={scoreData} 
+                                        color="var(--color-chart-score, #8b5cf6)" 
+                                        label="Score" 
+                                        onPointClick={(date) => handleDateClick(date)} 
+                                    />
                                 </div>
                             </div>
 
-                            <div className="bg-[#0f1320] border border-[#1d2230] rounded-lg p-4">
+                            <div className="bg-theme-hover border border-theme-secondary rounded-lg p-4">
                                 <h4 className="text-sm font-semibold text-white mb-3">Accuracy Over Time</h4>
                                 <div className="h-32">
-                                    <Chart data={accuracyData} color="#10b981" label="Accuracy" onPointClick={(date) => handleDateClick(date)} />
+                                    <Chart 
+                                        data={accuracyData} 
+                                        color="var(--color-chart-accuracy, #10b981)" 
+                                        label="Accuracy" 
+                                        onPointClick={(date) => handleDateClick(date)} 
+                                    />
                                 </div>
                             </div>
 
-                            <div className="bg-[#0f1320] border border-[#1d2230] rounded-lg p-4">
+                            <div className="bg-theme-hover border border-theme-secondary rounded-lg p-4">
                                 <h4 className="text-sm font-semibold text-white mb-3">Reaction Time (TTK)</h4>
                                 <div className="h-32">
-                                    <Chart data={ttkData} color="#f97316" label="TTK" inverted onPointClick={(date) => handleDateClick(date)} />
+                                    <Chart 
+                                        data={ttkData} 
+                                        color="var(--color-chart-ttk, #f97316)" 
+                                        label="TTK" 
+                                        inverted 
+                                        onPointClick={(date) => handleDateClick(date)} 
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -264,25 +330,25 @@ export default function ChartHost({ title, height = 400, taskName, packId }: Cha
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-4 border-b border-[#1d2230]">
                             <div className="text-center">
                                 <p className="text-lg font-bold text-blue-400">{chartData.length}</p>
-                                <p className="text-xs text-[#9aa4b2]">Total Runs</p>
+                                <p className="text-xs text-theme-muted">Total Runs</p>
                             </div>
                             <div className="text-center">
                                 <p className="text-lg font-bold text-green-400">
                                     {avgAccuracy !== null ? `${avgAccuracy.toFixed(1)}%` : "—"}
                                 </p>
-                                <p className="text-xs text-[#9aa4b2]">Avg Accuracy</p>
+                                <p className="text-xs text-theme-muted">Avg Accuracy</p>
                             </div>
                             <div className="text-center">
                                 <p className="text-lg font-bold text-purple-400">
                                     {avgScore !== null ? Math.round(avgScore).toLocaleString() : "—"}
                                 </p>
-                                <p className="text-xs text-[#9aa4b2]">Avg Score</p>
+                                <p className="text-xs text-theme-muted">Avg Score</p>
                             </div>
                             <div className="text-center">
                                 <p className="text-lg font-bold text-orange-400">
                                     {avgTtk !== null ? `${avgTtk.toFixed(3)}s` : "—"}
                                 </p>
-                                <p className="text-xs text-[#9aa4b2]">Avg TTK</p>
+                                <p className="text-xs text-theme-muted">Avg TTK</p>
                             </div>
                         </div>
 
@@ -294,7 +360,7 @@ export default function ChartHost({ title, height = 400, taskName, packId }: Cha
                             <div className="overflow-x-auto">
                                 <table className="w-full text-xs">
                                     <thead>
-                                        <tr className="[&>th]:text-left [&>th]:py-2 [&>th]:px-2 [&>th]:border-b [&>th]:border-[#1d2230] text-[#9aa4b2]">
+                                        <tr className="[&>th]:text-left [&>th]:py-2 [&>th]:px-2 [&>th]:border-b [&>th]:border-[#1d2230] text-theme-muted">
                                             {!taskName && <th>Task</th>}
                                             <th>Date & Time</th>
                                             <th>Accuracy</th>
@@ -319,7 +385,7 @@ export default function ChartHost({ title, height = 400, taskName, packId }: Cha
                                                 <td className={`font-medium ${
                                                     data.accuracy !== null && data.accuracy >= 80 ? "text-green-400" : 
                                                     data.accuracy !== null && data.accuracy >= 60 ? "text-yellow-400" : 
-                                                    data.accuracy !== null ? "text-red-400" : "text-[#9aa4b2]"
+                                                    data.accuracy !== null ? "text-red-400" : "text-theme-muted"
                                                 }`}>
                                                     {data.accuracy !== null ? `${data.accuracy.toFixed(1)}%` : "—"}
                                                 </td>
@@ -346,201 +412,196 @@ export default function ChartHost({ title, height = 400, taskName, packId }: Cha
                         </div>
                     </div>
                 )}
-            </div>
 
-            {/* Day Runs Modal */}
-            {selectedDate && dayRuns.length > 0 && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setSelectedDate(null)}>
-                    <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6 max-w-5xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 className="text-xl font-bold text-white">Runs on {selectedDate}</h3>
-                                <p className="text-sm text-[#9aa4b2] mt-1">{dayRuns.length} run{dayRuns.length > 1 ? 's' : ''} found</p>
-                            </div>
-                            <button
-                                onClick={() => setSelectedDate(null)}
-                                className="text-[#9aa4b2] hover:text-white text-2xl leading-none"
-                            >
-                                ×
-                            </button>
-                        </div>
-                        
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="[&>th]:text-left [&>th]:py-3 [&>th]:px-3 [&>th]:border-b [&>th]:border-[#1d2230] text-[#9aa4b2]">
-                                        {!taskName && <th>Task</th>}
-                                        <th>Time</th>
-                                        <th>Score</th>
-                                        <th>Accuracy</th>
-                                        <th>TTK</th>
-                                        <th>Shots</th>
-                                        <th>Hits</th>
-                                        <th>DPI</th>
-                                        <th>Sens</th>
-                                        <th>FOV</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="[&>tr:hover]:bg-[#111623] [&>tr>td]:py-3 [&>tr>td]:px-3 [&>tr>td]:border-b [&>tr>td]:border-[#1d2230]">
-                                    {dayRuns.map((run, index) => (
-                                        <tr key={index}>
-                                            {!taskName && (
-                                                <td className="text-white max-w-[200px] truncate" title={run.task_name}>
-                                                    {run.task_name || '—'}
-                                                </td>
-                                            )}
-                                            <td className="text-white whitespace-nowrap">
-                                                {new Date(run.played_at).toLocaleTimeString()}
-                                            </td>
-                                            <td className="text-blue-400 font-semibold">
-                                                {run.score !== null ? run.score.toLocaleString() : '—'}
-                                            </td>
-                                            <td className={`font-semibold ${
-                                                run.accuracy !== null && run.accuracy >= 80 ? "text-green-400" : 
-                                                run.accuracy !== null && run.accuracy >= 60 ? "text-yellow-400" : 
-                                                run.accuracy !== null ? "text-red-400" : "text-[#9aa4b2]"
-                                            }`}>
-                                                {run.accuracy !== null ? `${run.accuracy.toFixed(1)}%` : '—'}
-                                            </td>
-                                            <td className="text-orange-400">
-                                                {run.avg_ttk !== null ? `${run.avg_ttk.toFixed(3)}s` : '—'}
-                                            </td>
-                                            <td className="text-purple-400">
-                                                {run.shots !== null ? run.shots.toLocaleString() : '—'}
-                                            </td>
-                                            <td className="text-green-400">
-                                                {run.hits !== null ? run.hits.toLocaleString() : '—'}
-                                            </td>
-                                            <td className="text-cyan-400">
-                                                {run.dpi || '—'}
-                                            </td>
-                                            <td className="text-cyan-400">
-                                                {run.sens_h ? run.sens_h.toFixed(3) : '—'}
-                                            </td>
-                                            <td className="text-cyan-400">
-                                                {run.fov ? `${run.fov}°` : '—'}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            )}
+{/* Day Runs Modal */}
+{selectedDate && dayRuns.length > 0 && (
+<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setSelectedDate(null)}>
+<div className="bg-theme-tertiary border border-theme-secondary rounded-lg p-6 max-w-5xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+<div className="flex items-center justify-between mb-4">
+<div>
+<h3 className="text-xl font-bold text-white">Runs on {selectedDate}</h3>
+<p className="text-sm text-theme-muted mt-1">{dayRuns.length} run{dayRuns.length > 1 ? 's' : ''} found</p>
+</div>
+<button
+onClick={() => setSelectedDate(null)}
+className="text-theme-muted hover:text-white text-2xl leading-none"
+>
+×
+</button>
+</div>
+<div className="overflow-x-auto">
+<table className="w-full text-sm">
+<thead>
+<tr className="[&>th]:text-left [&>th]:py-3 [&>th]:px-3 [&>th]:border-b [&>th]:border-[#1d2230] text-theme-muted">
+{!taskName && <th>Task</th>}
+<th>Time</th>
+<th>Score</th>
+<th>Accuracy</th>
+<th>TTK</th>
+<th>Shots</th>
+<th>Hits</th>
+<th>DPI</th>
+<th>Sens</th>
+<th>FOV</th>
+</tr>
+</thead>
+<tbody className="[&>tr:hover]:bg-[#111623] [&>tr>td]:py-3 [&>tr>td]:px-3 [&>tr>td]:border-b [&>tr>td]:border-[#1d2230]">
+{dayRuns.map((run, index) => (
+<tr key={index}>
+{!taskName && (
+<td className="text-white max-w-[200px] truncate" title={run.task_name}>
+{run.task_name || '—'}
+</td>
+)}
+<td className="text-white whitespace-nowrap">
+{new Date(run.played_at).toLocaleTimeString()}
+</td>
+<td className="text-blue-400 font-semibold">
+{run.score !== null ? run.score.toLocaleString() : '—'}
+</td>
+<td className={`font-semibold ${
+run.accuracy !== null && run.accuracy >= 80 ? "text-green-400" : 
+run.accuracy !== null && run.accuracy >= 60 ? "text-yellow-400" : 
+run.accuracy !== null ? "text-red-400" : "text-theme-muted"
+}`}>
+{run.accuracy !== null ? `${run.accuracy.toFixed(1)}%` : '—'}
+</td>
+<td className="text-orange-400">
+{run.avg_ttk !== null ? `${run.avg_ttk.toFixed(3)}s` : '—'}
+</td>
+<td className="text-purple-400">
+{run.shots !== null ? run.shots.toLocaleString() : '—'}
+</td>
+<td className="text-green-400">
+{run.hits !== null ? run.hits.toLocaleString() : '—'}
+</td>
+<td className="text-cyan-400">
+{run.dpi || '—'}
+</td>
+<td className="text-cyan-400">
+{run.sens_h ? run.sens_h.toFixed(3) : '—'}
+</td>
+<td className="text-cyan-400">
+{run.fov ? `${run.fov}°` : '—'}
+</td>
+</tr>
+))}
+</tbody>
+</table>
+</div>
+</div>
+</div>
+)}
 
-            {/* Best Performance Modal */}
-            {showBestModal && bestSettings && (
-                <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowBestModal(false)}>
-                    <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-between mb-4">
-                            <div>
-                                <h3 className="text-xl font-bold text-white">Best Performance Run</h3>
-                                <p className="text-sm text-purple-400 mt-1">{bestSettings.task_name}</p>
-                            </div>
-                            <button
-                                onClick={() => setShowBestModal(false)}
-                                className="text-[#9aa4b2] hover:text-white text-2xl leading-none"
-                            >
-                                ×
-                            </button>
-                        </div>
-                        
-                        <div className="space-y-4">
-                            {/* Primary Stats */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-[#1b2440] rounded-lg p-4">
-                                    <p className="text-sm text-[#9aa4b2] mb-1">Score</p>
-                                    <p className="text-2xl font-bold text-blue-400">{bestSettings.score?.toLocaleString()}</p>
-                                </div>
-                                <div className="bg-[#1b2440] rounded-lg p-4">
-                                    <p className="text-sm text-[#9aa4b2] mb-1">Accuracy</p>
-                                    <p className="text-2xl font-bold text-green-400">{bestSettings.accuracy?.toFixed(1)}%</p>
-                                </div>
-                            </div>
-                            
-                            {/* Additional Stats Grid */}
-                            <div className="grid grid-cols-3 gap-3">
-                                {bestSettings.avg_ttk !== null && (
-                                    <div className="bg-[#1b2440] rounded-lg p-3">
-                                        <p className="text-xs text-[#9aa4b2] mb-1">Avg TTK</p>
-                                        <p className="text-lg font-bold text-orange-400">{bestSettings.avg_ttk.toFixed(3)}s</p>
-                                    </div>
-                                )}
-                                {bestSettings.shots !== null && (
-                                    <div className="bg-[#1b2440] rounded-lg p-3">
-                                        <p className="text-xs text-[#9aa4b2] mb-1">Shots</p>
-                                        <p className="text-lg font-bold text-purple-400">{bestSettings.shots.toLocaleString()}</p>
-                                    </div>
-                                )}
-                                {bestSettings.hits !== null && (
-                                    <div className="bg-[#1b2440] rounded-lg p-3">
-                                        <p className="text-xs text-[#9aa4b2] mb-1">Hits</p>
-                                        <p className="text-lg font-bold text-green-400">{bestSettings.hits.toLocaleString()}</p>
-                                    </div>
-                                )}
-                                {bestSettings.duration !== null && (
-                                    <div className="bg-[#1b2440] rounded-lg p-3">
-                                        <p className="text-xs text-[#9aa4b2] mb-1">Duration</p>
-                                        <p className="text-lg font-bold text-cyan-400">{bestSettings.duration.toFixed(1)}s</p>
-                                    </div>
-                                )}
-                                {bestSettings.fps_avg !== null && (
-                                    <div className="bg-[#1b2440] rounded-lg p-3">
-                                        <p className="text-xs text-[#9aa4b2] mb-1">Avg FPS</p>
-                                        <p className="text-lg font-bold text-yellow-400">{Math.round(bestSettings.fps_avg)}</p>
-                                    </div>
-                                )}
-                                {bestSettings.overshots !== null && (
-                                    <div className="bg-[#1b2440] rounded-lg p-3">
-                                        <p className="text-xs text-[#9aa4b2] mb-1">Overshots</p>
-                                        <p className="text-lg font-bold text-red-400">{bestSettings.overshots}</p>
-                                    </div>
-                                )}
-                                {bestSettings.reloads !== null && (
-                                    <div className="bg-[#1b2440] rounded-lg p-3">
-                                        <p className="text-xs text-[#9aa4b2] mb-1">Reloads</p>
-                                        <p className="text-lg font-bold text-pink-400">{bestSettings.reloads}</p>
-                                    </div>
-                                )}
-                            </div>
-                            
-                            {/* Date */}
-                            <div className="bg-[#1b2440] rounded-lg p-4">
-                                <p className="text-sm text-[#9aa4b2] mb-2">Date & Time</p>
-                                <p className="text-lg text-white">{new Date(bestSettings.played_at).toLocaleString()}</p>
-                            </div>
-                            
-                            {/* Settings */}
-                            {(bestSettings.dpi || bestSettings.sens_h || bestSettings.fov) && (
-                                <div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-lg p-4">
-                                    <h4 className="text-sm font-semibold text-purple-300 mb-3">🎯 Settings Used</h4>
-                                    <div className="grid grid-cols-3 gap-4 text-center">
-                                        {bestSettings.dpi && (
-                                            <div>
-                                                <p className="text-2xl font-bold text-white">{bestSettings.dpi}</p>
-                                                <p className="text-xs text-[#9aa4b2]">DPI</p>
-                                            </div>
-                                        )}
-                                        {bestSettings.sens_h && (
-                                            <div>
-                                                <p className="text-2xl font-bold text-white">{bestSettings.sens_h.toFixed(3)}</p>
-                                                <p className="text-xs text-[#9aa4b2]">Sensitivity</p>
-                                            </div>
-                                        )}
-                                        {bestSettings.fov && (
-                                            <div>
-                                                <p className="text-2xl font-bold text-white">{bestSettings.fov}°</p>
-                                                <p className="text-xs text-[#9aa4b2]">FOV</p>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-        </Section>
+{/* Best Performance Modal */}
+{showBestModal && bestSettings && (
+<div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowBestModal(false)}>
+<div className="bg-theme-tertiary border border-theme-secondary rounded-lg p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+<div className="flex items-center justify-between mb-4">
+<div>
+<h3 className="text-xl font-bold text-white">Best Performance Run</h3>
+<p className="text-sm text-purple-400 mt-1">{bestSettings.task_name}</p>
+</div>
+<button
+onClick={() => setShowBestModal(false)}
+className="text-theme-muted hover:text-white text-2xl leading-none"
+>
+×
+</button>
+</div>
+<div className="space-y-4">
+{/* Primary Stats */}
+<div className="grid grid-cols-2 gap-4">
+<div className="bg-theme-secondary rounded-lg p-4">
+<p className="text-sm text-theme-muted mb-1">Score</p>
+<p className="text-2xl font-bold text-blue-400">{bestSettings.score?.toLocaleString()}</p>
+</div>
+<div className="bg-theme-secondary rounded-lg p-4">
+<p className="text-sm text-theme-muted mb-1">Accuracy</p>
+<p className="text-2xl font-bold text-green-400">{bestSettings.accuracy?.toFixed(1)}%</p>
+</div>
+</div>
+{/* Additional Stats Grid */}
+<div className="grid grid-cols-3 gap-3">
+{bestSettings.avg_ttk !== null && (
+<div className="bg-theme-secondary rounded-lg p-3">
+<p className="text-xs text-theme-muted mb-1">Avg TTK</p>
+<p className="text-lg font-bold text-orange-400">{bestSettings.avg_ttk.toFixed(3)}s</p>
+</div>
+)}
+{bestSettings.shots !== null && (
+<div className="bg-theme-secondary rounded-lg p-3">
+<p className="text-xs text-theme-muted mb-1">Shots</p>
+<p className="text-lg font-bold text-purple-400">{bestSettings.shots.toLocaleString()}</p>
+</div>
+)}
+{bestSettings.hits !== null && (
+<div className="bg-theme-secondary rounded-lg p-3">
+<p className="text-xs text-theme-muted mb-1">Hits</p>
+<p className="text-lg font-bold text-green-400">{bestSettings.hits.toLocaleString()}</p>
+</div>
+)}
+{bestSettings.duration !== null && (
+<div className="bg-theme-secondary rounded-lg p-3">
+<p className="text-xs text-theme-muted mb-1">Duration</p>
+<p className="text-lg font-bold text-cyan-400">{bestSettings.duration.toFixed(1)}s</p>
+</div>
+)}
+{bestSettings.fps_avg !== null && (
+<div className="bg-theme-secondary rounded-lg p-3">
+<p className="text-xs text-theme-muted mb-1">Avg FPS</p>
+<p className="text-lg font-bold text-yellow-400">{Math.round(bestSettings.fps_avg)}</p>
+</div>
+)}
+{bestSettings.overshots !== null && (
+<div className="bg-theme-secondary rounded-lg p-3">
+<p className="text-xs text-theme-muted mb-1">Overshots</p>
+<p className="text-lg font-bold text-red-400">{bestSettings.overshots}</p>
+</div>
+)}
+{bestSettings.reloads !== null && (
+<div className="bg-theme-secondary rounded-lg p-3">
+<p className="text-xs text-theme-muted mb-1">Reloads</p>
+<p className="text-lg font-bold text-pink-400">{bestSettings.reloads}</p>
+</div>
+)}
+</div>
+{/* Date */}
+<div className="bg-theme-secondary rounded-lg p-4">
+<p className="text-sm text-theme-muted mb-2">Date & Time</p>
+<p className="text-lg text-white">{new Date(bestSettings.played_at).toLocaleString()}</p>
+</div>
+{/* Settings */}
+{(bestSettings.dpi || bestSettings.sens_h || bestSettings.fov) && (
+<div className="bg-gradient-to-r from-purple-900/20 to-blue-900/20 border border-purple-500/30 rounded-lg p-4">
+<h4 className="text-sm font-semibold text-purple-300 mb-3">Settings Used</h4>
+<div className="grid grid-cols-3 gap-4 text-center">
+{bestSettings.dpi && (
+<div>
+<p className="text-2xl font-bold text-white">{bestSettings.dpi}</p>
+<p className="text-xs text-theme-muted">DPI</p>
+</div>
+)}
+{bestSettings.sens_h && (
+<div>
+<p className="text-2xl font-bold text-white">{bestSettings.sens_h.toFixed(3)}</p>
+<p className="text-xs text-theme-muted">Sensitivity</p>
+</div>
+)}
+{bestSettings.fov && (
+<div>
+<p className="text-2xl font-bold text-white">{bestSettings.fov}°</p>
+<p className="text-xs text-theme-muted">FOV</p>
+</div>
+)}
+</div>
+</div>
+)}
+</div>
+</div>
+</div>
+)}
+</div>
+</Section>
     );
 }

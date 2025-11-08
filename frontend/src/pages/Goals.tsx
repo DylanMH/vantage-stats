@@ -56,21 +56,12 @@ export default function Goals() {
     return Math.min(100, Math.round((goal.current_value / goal.target_value) * 100));
   };
 
-  const getGoalTypeIcon = (type: string) => {
-    switch (type) {
-      case "accuracy": return "🎯";
-      case "score": return "⭐";
-      case "ttk": return "⚡";
-      case "consistency": return "📈";
-      case "playtime": return "⏱️";
-      default: return "🎯";
-    }
-  };
+  // Removed emoji icons for cleaner UI
 
   const getGoalTypeColor = (type: string) => {
     switch (type) {
       case "accuracy": return "bg-green-500";
-      case "score": return "bg-blue-500";
+      case "score": return "bg-theme-accent";
       case "ttk": return "bg-yellow-500";
       case "consistency": return "bg-purple-500";
       case "playtime": return "bg-orange-500";
@@ -92,7 +83,7 @@ export default function Goals() {
   return (
     <div className="space-y-4">
       {/* Header and Filters */}
-      <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold text-white">Goals</h1>
           <div className="flex gap-2">
@@ -100,8 +91,8 @@ export default function Goals() {
               onClick={() => setFilter("all")}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filter === "all"
-                  ? "bg-blue-500 text-white"
-                  : "bg-[#1b2440] text-[#9aa4b2] hover:bg-[#2d3561]"
+                  ? "bg-theme-accent text-white"
+                  : "bg-theme-tertiary text-theme-muted hover:border-theme-secondary"
               }`}
             >
               All ({allGoals.length})
@@ -111,7 +102,7 @@ export default function Goals() {
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filter === "active"
                   ? "bg-green-500 text-white"
-                  : "bg-[#1b2440] text-[#9aa4b2] hover:bg-[#2d3561]"
+                  : "bg-theme-tertiary text-theme-muted hover:border-theme-secondary"
               }`}
             >
               Active ({activeGoals?.length || 0})
@@ -121,7 +112,7 @@ export default function Goals() {
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 filter === "completed"
                   ? "bg-purple-500 text-white"
-                  : "bg-[#1b2440] text-[#9aa4b2] hover:bg-[#2d3561]"
+                  : "bg-theme-tertiary text-theme-muted hover:border-theme-secondary"
               }`}
             >
               Completed ({completedGoals?.length || 0})
@@ -136,24 +127,23 @@ export default function Goals() {
           filteredGoals.map(goal => (
             <div
               key={goal.id}
-              className={`bg-[#0d1424] border rounded-lg p-6 transition-all ${
+              className={`bg-theme-secondary border rounded-lg p-6 transition-all ${
                 goal.is_completed 
                   ? "border-green-500/30 bg-green-500/5" 
-                  : "border-[#1b2440]"
+                  : "border-theme-primary"
               }`}
             >
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-start gap-3">
-                  <span className="text-2xl">{getGoalTypeIcon(goal.goal_type)}</span>
                   <div>
                     <h3 className="text-lg font-semibold text-white">{goal.title}</h3>
                     {goal.description && (
-                      <p className="text-sm text-[#9aa4b2] mt-1">{goal.description}</p>
+                      <p className="text-sm text-theme-muted mt-1">{goal.description}</p>
                     )}
                     {goal.target_task_name && (
                       <p className="text-xs text-blue-400 mt-1">Task: {goal.target_task_name}</p>
                     )}
-                    <div className="flex items-center gap-4 mt-2 text-xs text-[#9aa4b2]">
+                    <div className="flex items-center gap-4 mt-2 text-xs text-theme-muted">
                       <span>Created: {formatDate(goal.created_at)}</span>
                       {goal.target_timeframe && (
                         <span>Timeframe: {goal.target_timeframe} days</span>
@@ -168,7 +158,7 @@ export default function Goals() {
                   <div className="text-sm font-medium text-white">
                     {formatGoalValue(goal.current_value, goal.goal_type)} / {formatGoalValue(goal.target_value, goal.goal_type)}
                   </div>
-                  <div className="text-xs text-[#9aa4b2]">
+                  <div className="text-xs text-theme-muted">
                     {getProgressPercentage(goal)}% complete
                   </div>
                 </div>
@@ -176,7 +166,7 @@ export default function Goals() {
 
               {/* Progress Bar */}
               <div className="space-y-2">
-                <div className="w-full bg-[#1b2440] rounded-full h-3">
+                <div className="w-full bg-theme-tertiary rounded-full h-3">
                   <div
                     className={`h-3 rounded-full transition-all duration-300 ${getGoalTypeColor(goal.goal_type)}`}
                     style={{
@@ -186,7 +176,7 @@ export default function Goals() {
                 </div>
                 {goal.is_completed && (
                   <div className="flex items-center gap-2 text-green-400 text-sm font-medium">
-                    <span>✓</span>
+                    <span className="font-bold">✓</span>
                     <span>Goal Achieved!</span>
                   </div>
                 )}
@@ -194,14 +184,13 @@ export default function Goals() {
             </div>
           ))
         ) : (
-          <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-12 text-center">
-            <div className="text-4xl mb-4">🎯</div>
+          <div className="bg-theme-secondary border border-theme-primary rounded-lg p-12 text-center">
             <h3 className="text-lg font-semibold text-white mb-2">
               {filter === "active" ? "No Active Goals" : 
                filter === "completed" ? "No Completed Goals" : 
                "No Goals Yet"}
             </h3>
-            <p className="text-[#9aa4b2] text-sm">
+            <p className="text-theme-muted text-sm">
               {filter === "active" ? "Complete more tasks to generate new goals!" :
                filter === "completed" ? "Start achieving your goals to see them here!" :
                "Play some games to unlock your first goals!"}

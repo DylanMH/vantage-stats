@@ -1,8 +1,9 @@
 // frontend/src/hooks/useApi.ts
 import { useEffect, useState } from "react";
 
-// Determine API base URL: use localhost:3000 if loaded from file:// (packaged app)
-const API_BASE_URL = window.location.protocol === 'file:' 
+// Determine API base URL: always use localhost:3000 for the Express backend
+// In development (localhost:5173) or production (file://), backend is always on port 3000
+const API_BASE_URL = window.location.protocol === 'file:' || window.location.port === '5173'
     ? 'http://localhost:3000' 
     : '';
 
@@ -29,21 +30,39 @@ export function getApiUrl(url: string): string {
     return url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
 }
 
-export function useQuery<T>(key: string, url: string) {
+export function useQuery<T>(key: string, url: string, options?: { refetchInterval?: number }) {
     const [data, setData] = useState<T | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
 
     useEffect(() => {
         let alive = true;
-        setLoading(true);
-        setError(null);
-        jget<T>(url)
-            .then(d => { if (alive) setData(d); })
-            .catch(e => { if (alive) setError(e as Error); })
-            .finally(() => { if (alive) setLoading(false); });
-        return () => { alive = false; };
-    }, [key, url]);
+        let intervalId: number | null = null;
+
+        const fetchData = () => {
+            // Don't set loading to true on refetch, only on initial load
+            if (!data) setLoading(true);
+            setError(null);
+            jget<T>(url)
+                .then(d => { if (alive) setData(d); })
+                .catch(e => { if (alive) setError(e as Error); })
+                .finally(() => { if (alive) setLoading(false); });
+        };
+
+        // Initial fetch
+        fetchData();
+
+        // Set up auto-refetch if interval is specified
+        if (options?.refetchInterval && options.refetchInterval > 0) {
+            intervalId = setInterval(fetchData, options.refetchInterval) as unknown as number;
+        }
+
+        return () => { 
+            alive = false;
+            if (intervalId) clearInterval(intervalId);
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [key, url, options?.refetchInterval]);
 
     return { data, loading, error };
 }

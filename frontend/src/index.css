@@ -3,6 +3,30 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme Utility Classes */
+@layer utilities {
+  .bg-theme-primary { background-color: var(--color-bg-primary); }
+  .bg-theme-secondary { background-color: var(--color-bg-secondary); }
+  .bg-theme-tertiary { background-color: var(--color-bg-tertiary); }
+  .bg-theme-hover { background-color: var(--color-bg-hover); }
+  
+  .border-theme-primary { border-color: var(--color-border-primary); }
+  .border-theme-secondary { border-color: var(--color-border-secondary); }
+  
+  .text-theme-primary { color: var(--color-text-primary); }
+  .text-theme-secondary { color: var(--color-text-secondary); }
+  .text-theme-muted { color: var(--color-text-muted); }
+  
+  .text-theme-accent { color: var(--color-accent-primary); }
+  .bg-theme-accent { background-color: var(--color-accent-primary); }
+  .bg-theme-accent-hover:hover { background-color: var(--color-accent-hover); }
+  
+  .text-theme-success { color: var(--color-success); }
+  .text-theme-warning { color: var(--color-warning); }
+  .text-theme-error { color: var(--color-error); }
+  .text-theme-info { color: var(--color-info); }
+}
+
 @keyframes slide-in {
   from {
     transform: translateX(100%);
@@ -20,6 +44,7 @@
 
 
 :root {
+  /* Legacy variables */
   --bg: #0f1115;
   --card: #161a22;
   --text: #e6edf3;
@@ -35,6 +60,34 @@
     rgba(86, 207, 255, 0.08),
     transparent 60%
   );
+
+  /* Theme System Variables - Default Blue Theme */
+  --color-bg-primary: #0a0f1e;
+  --color-bg-secondary: #0d1424;
+  --color-bg-tertiary: #1b2440;
+  --color-bg-hover: #111623;
+  
+  --color-border-primary: #1b2440;
+  --color-border-secondary: #2d3561;
+  
+  --color-text-primary: #ffffff;
+  --color-text-secondary: #e5e7eb;
+  --color-text-muted: #9aa4b2;
+  
+  --color-accent-primary: #3b82f6;
+  --color-accent-secondary: #2563eb;
+  --color-accent-hover: #1d4ed8;
+  
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+  
+  --color-chart-score: #8b5cf6;
+  --color-chart-accuracy: #10b981;
+  --color-chart-ttk: #f97316;
+  --color-chart-shots: #a855f7;
+  --color-chart-hits: #22c55e;
 }
 * {
   box-sizing: border-box;

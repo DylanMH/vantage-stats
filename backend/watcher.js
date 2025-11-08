@@ -215,20 +215,28 @@ async function startWatcher(statsPath, db) {
 
     // Start live file watcher for real-time updates
     console.log('👁️  Starting real-time file watcher...');
+    console.log('📁 Watching pattern:', pattern);
     const watcher = chokidar.watch(pattern, {
         ignoreInitial: true,
         awaitWriteFinish: { stabilityThreshold: 500, pollInterval: 100 }
     });
 
     watcher.on('add', async file => {
+        console.log('🔔 File detected:', path.basename(file));
         try {
             const result = await upsertRun(db, file);
             if (result.isNew) {
                 console.log('✅ New run ingested:', path.basename(file));
+            } else {
+                console.log('⏭️  Run already exists (duplicate):', path.basename(file));
             }
         } catch (err) {
             console.error('❌ Watcher error:', err.message, 'file:', file);
         }
+    });
+
+    watcher.on('error', error => {
+        console.error('❌ Watcher error:', error);
     });
 
     console.log('✅ Watcher ready - monitoring for new runs\n');

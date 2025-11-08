@@ -39,7 +39,32 @@ export default function Stats() {
   const [selectedPack, setSelectedPack] = useState("all");
   const [timeframe, setTimeframe] = useState("overall"); // day, week, month, overall
 
-  const tasksUrl = selectedPack && selectedPack !== "all" ? `/api/tasks/summary?pack_id=${selectedPack}` : "/api/tasks/summary";
+  const getTimeframeDays = () => {
+    switch (timeframe) {
+      case "day": return 1;
+      case "week": return 7;
+      case "month": return 30;
+      case "overall": return null;
+      default: return null;
+    }
+  };
+
+  const tasksUrl = useMemo(() => {
+    const params = new URLSearchParams();
+    if (selectedPack && selectedPack !== "all") {
+      params.append('pack_id', selectedPack);
+    }
+    
+    const days = getTimeframeDays();
+    if (days !== null) {
+      params.append('days', days.toString());
+    }
+    
+    const queryString = params.toString();
+    return queryString ? `/api/tasks/summary?${queryString}` : "/api/tasks/summary";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedPack, timeframe]);
+
   const { data: tasksRaw } = useQuery<RawTask[]>("tasksSummary", tasksUrl);
   const { data: packs } = useQuery<Pack[]>("packs", "/api/packs");
 
@@ -74,15 +99,6 @@ export default function Stats() {
     return filtered;
   }, [tasks, selectedTask]);
 
-  const getTimeframeDays = () => {
-    switch (timeframe) {
-      case "day": return 1;
-      case "week": return 7;
-      case "month": return 30;
-      default: return null;
-    }
-  };
-
   const globalStatsUrl = (() => {
     const params = new URLSearchParams();
     const days = getTimeframeDays();
@@ -102,17 +118,17 @@ export default function Stats() {
   return (
     <div className="space-y-4">
       {/* Filters */}
-      <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-white">Filters</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-[#9aa4b2] mb-2">
+            <label className="block text-sm font-medium text-theme-muted mb-2">
               Task
             </label>
             <select
               value={selectedTask || "all"}
               onChange={(e) => setSelectedTask(e.target.value)}
-              className="w-full bg-[#0f1320] border border-[#2d3561] text-white px-3 py-2 rounded-lg outline-none"
+              className="w-full bg-theme-tertiary border border-theme-secondary text-white px-3 py-2 rounded-lg outline-none"
             >
               <option value="all">All Tasks</option>
               {taskNames?.map((taskName) => (
@@ -124,13 +140,13 @@ export default function Stats() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-[#9aa4b2] mb-2">
+            <label className="block text-sm font-medium text-theme-muted mb-2">
               Pack
             </label>
             <select
               value={selectedPack}
               onChange={(e) => setSelectedPack(e.target.value)}
-              className="w-full px-3 py-2 bg-[#1b2440] border border-[#2d3561] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-theme-accent"
             >
               <option value="all">All Packs</option>
               {packs?.map(p => (
@@ -140,13 +156,13 @@ export default function Stats() {
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-[#9aa4b2] mb-2">
+            <label className="block text-sm font-medium text-theme-muted mb-2">
               Timeframe
             </label>
             <select
               value={timeframe}
               onChange={(e) => setTimeframe(e.target.value)}
-              className="w-full px-3 py-2 bg-[#1b2440] border border-[#2d3561] rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-theme-accent"
             >
               <option value="day">Last 24 Hours</option>
               <option value="week">Last Week</option>
@@ -156,9 +172,24 @@ export default function Stats() {
           </div>
         </div>
         
+        {(selectedTask !== "all" || selectedPack !== "all" || timeframe !== "overall") && (
+          <div className="mt-4 pt-4 border-t border-theme-primary">
+            <button
+              onClick={() => {
+                setSelectedTask("all");
+                setSelectedPack("all");
+                setTimeframe("overall");
+              }}
+              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-colors"
+            >
+Clear All Filters
+            </button>
+          </div>
+        )}
+        
         {/* Quick Time Filter Buttons */}
-        <div className="flex gap-2 mt-4">
-          <span className="text-sm text-[#9aa4b2] self-center mr-2">Quick Select:</span>
+        <div className="flex gap-2 items-center flex-wrap mt-4 pt-4 border-t border-theme-primary">
+          <span className="text-sm text-theme-muted self-center mr-2">Quick Select:</span>
           {[
             { label: "Today", value: "day" },
             { label: "7 Days", value: "week" },
@@ -170,8 +201,8 @@ export default function Stats() {
               onClick={() => setTimeframe(btn.value)}
               className={`px-4 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 timeframe === btn.value
-                  ? "bg-blue-600 text-white"
-                  : "bg-[#1b2440] text-[#9aa4b2] hover:bg-[#2d3561] hover:text-white"
+                  ? "bg-theme-accent-hover text-white"
+                  : "bg-theme-tertiary text-theme-muted hover:bg-theme-hover hover:text-white"
               }`}
             >
               {btn.label}
@@ -180,9 +211,9 @@ export default function Stats() {
         </div>
       </div>
 
-      {/* Global Stats Overview */}
-      <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4 text-white">
+      {/* Global Stats Overview - Compact */}
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-4">
+        <h2 className="text-lg font-bold mb-3 text-white">
           {selectedTask && selectedTask !== "all" 
             ? `Statistics: ${selectedTask}` 
             : selectedPack && selectedPack !== "all"
@@ -190,73 +221,85 @@ export default function Stats() {
             : "Global Statistics"
           }
         </h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          <div className="text-center">
-            <p className="text-2xl font-bold text-blue-400">{globalStats?.total_runs || 0}</p>
-            <p className="text-sm text-[#9aa4b2]">Total Runs</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+          <div className="text-center bg-theme-hover rounded-lg p-2">
+            <p className="text-xl font-bold text-blue-400">{globalStats?.total_runs || 0}</p>
+            <p className="text-xs text-theme-muted">Total Runs</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-green-400">{globalStats?.unique_tasks || 0}</p>
-            <p className="text-sm text-[#9aa4b2]">Unique Tasks</p>
+          <div className="text-center bg-theme-hover rounded-lg p-2">
+            <p className="text-xl font-bold text-green-400">{globalStats?.unique_tasks || 0}</p>
+            <p className="text-xs text-theme-muted">Unique Tasks</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-yellow-400">
+          <div className="text-center bg-theme-hover rounded-lg p-2">
+            <p className="text-xl font-bold text-yellow-400">
               {globalStats?.avg_accuracy ? `${globalStats.avg_accuracy.toFixed(1)}%` : "—"}
             </p>
-            <p className="text-sm text-[#9aa4b2]">Avg Accuracy</p>
+            <p className="text-xs text-theme-muted">Avg Accuracy</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-purple-400">
+          <div className="text-center bg-theme-hover rounded-lg p-2">
+            <p className="text-xl font-bold text-purple-400">
               {globalStats?.avg_score ? Math.round(globalStats.avg_score).toLocaleString() : "—"}
             </p>
-            <p className="text-sm text-[#9aa4b2]">Avg Score</p>
+            <p className="text-xs text-theme-muted">Avg Score</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-orange-400">
+          <div className="text-center bg-theme-hover rounded-lg p-2">
+            <p className="text-xl font-bold text-orange-400">
               {globalStats?.avg_ttk ? `${globalStats.avg_ttk.toFixed(3)}s` : "—"}
             </p>
-            <p className="text-sm text-[#9aa4b2]">Avg TTK</p>
+            <p className="text-xs text-theme-muted">Avg TTK</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-cyan-400">
+          <div className="text-center bg-theme-hover rounded-lg p-2">
+            <p className="text-xl font-bold text-cyan-400">
               {globalStats?.total_duration ? formatDuration(globalStats.total_duration) : "0m"}
             </p>
-            <p className="text-sm text-[#9aa4b2]">Total Time</p>
+            <p className="text-xs text-theme-muted">Total Time</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-red-400">
+          <div className="text-center bg-theme-hover rounded-lg p-2">
+            <p className="text-xl font-bold text-red-400">
               {globalStats?.total_shots ? globalStats.total_shots.toLocaleString() : "0"}
             </p>
-            <p className="text-sm text-[#9aa4b2]">Total Shots</p>
+            <p className="text-xs text-theme-muted">Total Shots</p>
           </div>
-          <div className="text-center">
-            <p className="text-2xl font-bold text-pink-400">
+          <div className="text-center bg-theme-hover rounded-lg p-2">
+            <p className="text-xl font-bold text-pink-400">
               {globalStats?.avg_shots ? Math.round(globalStats.avg_shots).toLocaleString() : "0"}
             </p>
-            <p className="text-sm text-[#9aa4b2]">Avg Shots/Run</p>
+            <p className="text-xs text-theme-muted">Avg Shots/Run</p>
           </div>
         </div>
       </div>
 
-      {/* Chart Section */}
-      <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
+      {/* Chart Section - Bigger and more prominent */}
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <ChartHost
           title={selectedTask && selectedTask !== "all" ? `All Runs - ${selectedTask}` : "Overall Performance Trends"}
-          height={400}
+          height={selectedTask && selectedTask !== "all" ? 500 : 550}
           taskName={selectedTask && selectedTask !== "all" ? selectedTask : undefined}
           packId={selectedPack && selectedPack !== "all" ? selectedPack : undefined}
+          timeframe={timeframe}
         />
       </div>
 
-      {/* Tasks Table - Hidden when specific task selected to avoid redundancy */}
+      {/* Tasks Table - Collapsible section when viewing all tasks */}
       {(!selectedTask || selectedTask === "all") && (
-        <div className="bg-[#0d1424] border border-[#1b2440] rounded-lg p-6">
-          <TasksTable 
-            rows={filteredTasks} 
-            onFilter={setSelectedTask}
-            onSelectTask={setSelectedTask}
-          />
-        </div>
+        <details open className="bg-theme-secondary border border-theme-primary rounded-lg">
+          <summary className="px-6 py-4 cursor-pointer hover:bg-theme-hover transition-colors font-semibold text-white flex items-center justify-between">
+            <span className="flex items-center gap-2">
+Task Performance Overview
+              <span className="text-sm text-theme-muted font-normal">
+                ({filteredTasks.length} tasks)
+              </span>
+            </span>
+            <span className="text-theme-muted text-sm">Click to expand/collapse</span>
+          </summary>
+          <div className="px-6 pb-6">
+            <TasksTable 
+              rows={filteredTasks} 
+              onSelectTask={setSelectedTask}
+              hideFilter={true}
+            />
+          </div>
+        </details>
       )}
     </div>
   );
