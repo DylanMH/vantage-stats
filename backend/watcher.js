@@ -7,6 +7,7 @@ const crypto = require('crypto');
 const { parseCsvToRun } = require('./csvParser');
 const goals = require('./goals');
 const { getSetting, setSetting, getSettingBoolean } = require('./settings');
+const { notifyNewRun } = require('./server');
 
 function sha1(buf) {
     return crypto.createHash('sha1').update(buf).digest('hex');
@@ -215,23 +216,40 @@ async function startWatcher(statsPath, db) {
 
     // Start live file watcher for real-time updates
     console.log('👁️  Starting real-time file watcher...');
-    console.log('📁 Watching pattern:', pattern);
-    const watcher = chokidar.watch(pattern, {
+    
+    const watcher = chokidar.watch(statsPath, {  // Watch the directory, not the pattern
+        ignored: /(^|[\/\\])\../, // ignore dotfiles
         ignoreInitial: true,
-        awaitWriteFinish: { stabilityThreshold: 500, pollInterval: 100 }
+        persistent: true,
+        usePolling: true, // Use polling for game-created files (more reliable)
+        interval: 2000, // Poll every 2 seconds
+        awaitWriteFinish: { 
+            stabilityThreshold: 500, // Wait 500ms for file writes to finish
+            pollInterval: 100 
+        },
+        depth: 10, // Watch nested folders
+        alwaysStat: true, // Ensure file stats are checked
+        atomic: false // Some games don't write atomically
     });
 
     watcher.on('add', async file => {
-        console.log('🔔 File detected:', path.basename(file));
+        // Only process CSV files
+        if (!file.toLowerCase().endsWith('.csv')) return;
+        
+        console.log('📊 New run detected:', path.basename(file));
         try {
             const result = await upsertRun(db, file);
             if (result.isNew) {
-                console.log('✅ New run ingested:', path.basename(file));
-            } else {
-                console.log('⏭️  Run already exists (duplicate):', path.basename(file));
+                console.log('   ✅ Imported successfully');
+                
+                // Update last scan timestamp so next app start knows about this file
+                await setSetting(db, 'last_scan_timestamp', new Date().toISOString());
+                
+                // Notify frontend clients to refresh data
+                notifyNewRun();
             }
         } catch (err) {
-            console.error('❌ Watcher error:', err.message, 'file:', file);
+            console.error('   ❌ Import error:', err.message);
         }
     });
 
@@ -239,7 +257,12 @@ async function startWatcher(statsPath, db) {
         console.error('❌ Watcher error:', error);
     });
 
-    console.log('✅ Watcher ready - monitoring for new runs\n');
+    watcher.on('ready', () => {
+        console.log('✅ Watcher ready - monitoring for new runs');
+        console.log('   Watching:', statsPath);
+        console.log('   Polling: Every 2 seconds\n');
+    });
+
     return watcher;
 }
 

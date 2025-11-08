@@ -7,6 +7,7 @@ import Settings from "./pages/Settings";
 import { ThemeProvider } from "./contexts/ThemeContext.tsx";
 import GoalNotification from "./components/GoalNotification";
 import { useGoalNotifications } from "./hooks/useGoalNotifications";
+import { useRealtimeUpdates } from "./hooks/useRealtimeUpdates";
 
 // Dashboard component for the root route - now shows Profile
 function Dashboard() {
@@ -15,6 +16,12 @@ function Dashboard() {
 
 function AppContent() {
   const { notifications, dismissNotification } = useGoalNotifications();
+
+  // Listen for real-time updates from backend
+  useRealtimeUpdates(() => {
+    // Dispatch custom event that components can listen to
+    window.dispatchEvent(new CustomEvent('data-updated'));
+  });
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-primary, #0b0f14)' }}>

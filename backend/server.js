@@ -12,6 +12,16 @@ function daysAgoIso(days) {
     return d.toISOString();
 }
 
+// Store SSE clients for real-time updates
+let sseClients = [];
+
+function notifyNewRun() {
+    // Notify all connected clients that new data is available
+    sseClients.forEach(client => {
+        client.write(`data: ${JSON.stringify({ type: 'new-run' })}\n\n`);
+    });
+}
+
 function startServer(db, port = 3000) {
     const app = express();
     
@@ -27,6 +37,27 @@ function startServer(db, port = 3000) {
     });
     
     app.use(express.json());
+
+    // SSE endpoint for real-time updates
+    app.get('/api/events', (req, res) => {
+        res.writeHead(200, {
+            'Content-Type': 'text/event-stream',
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'Access-Control-Allow-Origin': '*'
+        });
+
+        // Send initial connection message
+        res.write(`data: ${JSON.stringify({ type: 'connected' })}\n\n`);
+
+        // Add client to list
+        sseClients.push(res);
+
+        // Remove client on disconnect
+        req.on('close', () => {
+            sseClients = sseClients.filter(client => client !== res);
+        });
+    });
 
     // serve static dashboard from /public
     app.use(express.static(path.join(__dirname, '..', 'public')));
@@ -962,4 +993,4 @@ async function initializeStatsFolder(db, statsPath) {
     console.log(`📁 Stats folder initialized: ${statsPath}`);
 }
 
-module.exports = { startServer, initializeStatsFolder };
+module.exports = { startServer, initializeStatsFolder, notifyNewRun };

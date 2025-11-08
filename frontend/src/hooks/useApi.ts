@@ -30,10 +30,11 @@ export function getApiUrl(url: string): string {
     return url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
 }
 
-export function useQuery<T>(key: string, url: string, options?: { refetchInterval?: number }) {
+export function useQuery<T>(key: string, url: string, options?: { refetchInterval?: number; refetchOnFocus?: boolean }) {
     const [data, setData] = useState<T | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
+    const [refetchCount, setRefetchCount] = useState(0);
 
     useEffect(() => {
         let alive = true;
@@ -57,12 +58,21 @@ export function useQuery<T>(key: string, url: string, options?: { refetchInterva
             intervalId = setInterval(fetchData, options.refetchInterval) as unknown as number;
         }
 
+        // Listen for real-time update events
+        const handleUpdate = () => fetchData();
+        window.addEventListener('data-updated', handleUpdate);
+
         return () => { 
             alive = false;
             if (intervalId) clearInterval(intervalId);
+            window.removeEventListener('data-updated', handleUpdate);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [key, url, options?.refetchInterval]);
+    }, [key, url, options?.refetchInterval, refetchCount]);
 
-    return { data, loading, error };
+    const refetch = () => {
+        setRefetchCount(prev => prev + 1);
+    };
+
+    return { data, loading, error, refetch };
 }

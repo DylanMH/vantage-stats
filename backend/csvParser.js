@@ -93,19 +93,21 @@ function parseDateSafe(rawStr, filename) {
             if (dateMatch) {
                 const [_, Y, M, D] = dateMatch;
                 const [__, h, m, s, ms] = timeMatch;
-                const iso = `${Y}-${M}-${D}T${h}:${m}:${s}.${ms || '000'}Z`;
+                // Parse as LOCAL time (no Z suffix) since Kovaak's uses local timestamps
+                const iso = `${Y}-${M}-${D}T${h}:${m}:${s}.${ms || '000'}`;
                 const dateObj = new Date(iso);
                 if (!isNaN(dateObj.getTime())) return dateObj.toISOString();
             }
         }
     }
     
-    // Fallback to filename date extraction
+    // Fallback to filename date extraction - also use local time
     const base = path.basename(filename);
     const m = base.match(/(\d{4})\.(\d{2})\.(\d{2})-(\d{2})\.(\d{2})\.(\d{2})/);
     if (m) {
         const [_, Y, M, D, h, mi, se] = m;
-        const iso = `${Y}-${M}-${D}T${h}:${mi}:${se}Z`;
+        // Parse as LOCAL time (no Z suffix)
+        const iso = `${Y}-${M}-${D}T${h}:${mi}:${se}`;
         const d = new Date(iso);
         if (!isNaN(d.getTime())) return d.toISOString();
     }
