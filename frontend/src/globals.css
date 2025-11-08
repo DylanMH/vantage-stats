@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #0f1115;
+  --color-card: #161a22;
+  --color-text: #e6edf3;
+  --color-muted: #9aa4b2;
+  --color-border: #222838;
+
+  --shadow-card: 0 10px 30px rgba(0, 0, 0, 0.35),
+    0 1px 0 rgba(255, 255, 255, 0.02) inset;
+  --radius-2xl: 16px;
+
+  --bg-glow1: radial-gradient(
+    800px 300px at 20% -10%,
+    rgba(0, 122, 255, 0.09),
+    transparent 60%
+  );
+  --bg-glow2: radial-gradient(
+    600px 260px at 80% -10%,
+    rgba(86, 207, 255, 0.08),
+    transparent 60%
+  );
+}
+
+:root {
+  color-scheme: dark;
+}
+body {
+  min-height: 100vh;
+  background: var(--bg-glow1), var(--bg-glow2), var(--color-bg);
+  color: var(--color-text);
+  font-family: ui-sans-serif, system-ui, Segoe UI, Roboto, Ubuntu, Cantarell,
+    "Noto Sans", sans-serif;
+}

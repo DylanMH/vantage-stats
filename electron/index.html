@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+
+<body style="background: #0b0f14; color: white; font-family: sans-serif; padding: 20px;">
+    <div style="max-width: 500px; margin: 0 auto;">
+        <h2 style="text-align: center; margin-bottom: 30px;">Kovaaks Insight Setup</h2>
+        
+        <div id="setup-content">
+            <p id="status" style="margin-bottom: 20px;">Welcome! Let's get your stats tracking set up.</p>
+            <p id="instructions" style="font-size: 14px; opacity: 0.8; margin-bottom: 20px;">
+                Select your Kovaaks folders to begin.
+            </p>
+            
+            <div id="folder-selection">
+                <!-- Stats Folder -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 8px; font-size: 13px;">Stats Folder</label>
+                    <p style="font-size: 12px; opacity: 0.7; margin-bottom: 8px;">Where Kovaak's saves your performance stats (CSV files)</p>
+                    <code id="chosen-stats" style="display: block; background: #1b2440; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 12px; word-break: break-all; min-height: 20px;"></code>
+                    <button id="pick-stats" style="background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 14px; width: 100%;">
+                        Select Stats Folder
+                    </button>
+                </div>
+                
+                <!-- Playlists Folder -->
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 8px; font-size: 13px;">Playlists Folder (Optional)</label>
+                    <p style="font-size: 12px; opacity: 0.7; margin-bottom: 8px;">Where Kovaak's saves downloaded playlists (JSON files)</p>
+                    <code id="chosen-playlists" style="display: block; background: #1b2440; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 12px; word-break: break-all; min-height: 20px;"></code>
+                    <button id="pick-playlists" style="background: #059669; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 14px; width: 100%;">
+                        Select Playlists Folder
+                    </button>
+                </div>
+                
+                <!-- Continue Button -->
+                <button id="continue-setup" disabled style="background: #8b5cf6; color: white; border: none; padding: 14px 24px; border-radius: 5px; cursor: pointer; font-size: 15px; width: 100%; font-weight: bold; margin-top: 10px;">
+                    Continue
+                </button>
+            </div>
+            
+            <div id="loading" style="display: none; text-align: center; margin: 20px 0;">
+                <div style="border: 3px solid #1b2440; border-top: 3px solid #2563eb; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto;"></div>
+                <p style="margin-top: 15px;">Setting up your dashboard...</p>
+                <p id="loading-status" style="font-size: 12px; opacity: 0.7;">Initializing services...</p>
+            </div>
+            
+            <div id="error" style="display: none; background: #dc2626; color: white; padding: 15px; border-radius: 5px; margin: 15px 0;">
+                <p id="error-message">Something went wrong. Please try again.</p>
+                <button id="retry" style="background: #991b1b; color: white; border: none; padding: 8px 16px; border-radius: 3px; cursor: pointer; margin-top: 10px;">
+                    Retry
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        button:hover {
+            opacity: 0.9;
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+
+    <script>
+        const { ipcRenderer } = require('electron');
+        const path = require('path');
+        const statusEl = document.getElementById('status');
+        const chosenStatsEl = document.getElementById('chosen-stats');
+        const chosenPlaylistsEl = document.getElementById('chosen-playlists');
+        const pickStatsBtn = document.getElementById('pick-stats');
+        const pickPlaylistsBtn = document.getElementById('pick-playlists');
+        const continueBtn = document.getElementById('continue-setup');
+        const loadingEl = document.getElementById('loading');
+        const loadingStatusEl = document.getElementById('loading-status');
+        const errorEl = document.getElementById('error');
+        const errorMessageEl = document.getElementById('error-message');
+        const retryBtn = document.getElementById('retry');
+        const folderSelectionEl = document.getElementById('folder-selection');
+        
+        let statsFolder = null;
+        let playlistsFolder = null;
+
+        async function checkServicesReady() {
+            try {
+                const result = await ipcRenderer.invoke('check-services');
+                return result.ready;
+            } catch (error) {
+                return false;
+            }
+        }
+
+        async function waitForServices() {
+            let attempts = 0;
+            const maxAttempts = 30; // Wait up to 30 seconds
+            
+            while (attempts < maxAttempts) {
+                loadingStatusEl.textContent = `Checking services... (${attempts + 1}/${maxAttempts})`;
+                
+                if (await checkServicesReady()) {
+                    loadingStatusEl.textContent = 'Services ready! Loading dashboard...';
+                    setTimeout(() => {
+                        window.location.href = 'http://localhost:5173';
+                    }, 1000);
+                    return true;
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                attempts++;
+            }
+            
+            showError('Services failed to start in time. Please check the console for errors.');
+            return false;
+        }
+
+        function showError(message) {
+            errorMessageEl.textContent = message;
+            errorEl.style.display = 'block';
+            loadingEl.style.display = 'none';
+            folderSelectionEl.style.display = 'block';
+        }
+
+        function showLoading() {
+            folderSelectionEl.style.display = 'none';
+            errorEl.style.display = 'none';
+            loadingEl.style.display = 'block';
+            loadingStatusEl.textContent = 'Initializing services...';
+        }
+
+        // Stats folder picker
+        pickStatsBtn.onclick = async () => {
+            const folder = await ipcRenderer.invoke('pick-stats-folder');
+            if (!folder) return;
+            
+            statsFolder = folder;
+            chosenStatsEl.textContent = folder;
+            
+            // Enable continue button if stats folder is selected
+            if (statsFolder) {
+                continueBtn.disabled = false;
+            }
+        };
+        
+        // Playlists folder picker (optional)
+        pickPlaylistsBtn.onclick = async () => {
+            const folder = await ipcRenderer.invoke('pick-stats-folder'); // Same picker
+            if (!folder) return;
+            
+            playlistsFolder = folder;
+            chosenPlaylistsEl.textContent = folder;
+        };
+        
+        // Continue button - save config and start
+        continueBtn.onclick = async () => {
+            if (!statsFolder) {
+                showError('Please select a stats folder first.');
+                return;
+            }
+            
+            continueBtn.disabled = true;
+            continueBtn.textContent = 'Setting up...';
+            showLoading();
+            
+            // Database always lives in userData directory
+            const backendDbPath = path.join(__dirname, '../backend/kovaaks.db');
+            
+            const cfg = {
+                stats_path: statsFolder,
+                playlists_path: playlistsFolder || '', // Optional
+                db_path: backendDbPath,
+                port: 3000
+            };
+            
+            try {
+                const success = await ipcRenderer.invoke('save-config', cfg);
+                if (success) {
+                    await waitForServices();
+                } else {
+                    showError('Failed to save configuration.');
+                }
+            } catch (error) {
+                showError('Setup failed: ' + error.message);
+            }
+        };
+
+        retryBtn.onclick = () => {
+            errorEl.style.display = 'none';
+            folderSelectionEl.style.display = 'block';
+            continueBtn.disabled = !statsFolder;
+            continueBtn.textContent = 'Continue';
+        };
+
+        // Check if already configured on load
+        (async () => {
+            try {
+                const config = await ipcRenderer.invoke('get-config');
+                if (config && config.stats_path) {
+                    statsFolder = config.stats_path;
+                    playlistsFolder = config.playlists_path || null;
+                    chosenStatsEl.textContent = statsFolder;
+                    if (playlistsFolder) {
+                        chosenPlaylistsEl.textContent = playlistsFolder;
+                    }
+                    statusEl.textContent = 'Configuration found. Loading dashboard...';
+                    showLoading();
+                    await waitForServices();
+                }
+            } catch (error) {
+                console.error('Failed to check existing config:', error);
+            }
+        })();
+    </script>
+</body>
+
+</html>

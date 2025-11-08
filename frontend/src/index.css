@@ -1,0 +1,251 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
+}
+
+
+:root {
+  --bg: #0f1115;
+  --card: #161a22;
+  --text: #e6edf3;
+  --muted: #9aa4b2;
+  --border: #222838;
+  --glow1: radial-gradient(
+    800px 300px at 20% -10%,
+    rgba(0, 122, 255, 0.09),
+    transparent 60%
+  );
+  --glow2: radial-gradient(
+    600px 260px at 80% -10%,
+    rgba(86, 207, 255, 0.08),
+    transparent 60%
+  );
+}
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.5 ui-sans-serif, system-ui, Segoe UI, Roboto, Ubuntu;
+  background-image: var(--glow1), var(--glow2);
+  background-repeat: no-repeat;
+}
+
+.wrap {
+  min-height: 100%;
+}
+.nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+  background: #0d1016cc;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  backdrop-filter: blur(6px);
+}
+.logo {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+.nav-r a {
+  color: var(--text);
+  text-decoration: none;
+  margin-left: 14px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+.nav-r a.active {
+  background: #0d1424;
+  border: 1px solid #1b2440;
+}
+.nav-r .muted {
+  color: var(--muted);
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+/* tighter container and uniform gaps */
+.container {
+  max-width: 1160px;
+  margin: 24px auto 80px;
+  padding: 0 16px;
+}
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+.grid2 {
+  display: grid;
+  grid-template-columns: 1.4fr 0.6fr;
+  gap: 14px;
+  margin-top: 14px;
+}
+@media (max-width: 1000px) {
+  .grid2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* unify cards */
+.card {
+  padding: 14px;
+  border-radius: 16px;
+}
+
+/* give chart/recent consistent heights */
+.card--tall {
+  height: 380px;
+}
+.card--side {
+  height: 380px;
+  overflow: hidden;
+}
+
+.title {
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #cdd9e5;
+}
+.title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.input {
+  width: 280px;
+  max-width: 100%;
+  background: #0f1320;
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 10px;
+  border-radius: 10px;
+  outline: none;
+}
+
+.table {
+  overflow: auto;
+}
+.table.compact td,
+.table.compact th {
+  padding: 8px 6px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+th,
+td {
+  text-align: left;
+  padding: 10px 8px;
+  border-bottom: 1px solid #1d2230;
+  white-space: nowrap;
+}
+thead th {
+  position: sticky;
+  top: 0;
+  background: #151a22;
+  z-index: 1;
+}
+tbody tr:hover {
+  background: #111623;
+}
+
+.btn {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: transparent;
+  color: #7cc0ff;
+  cursor: pointer;
+}
+.btn:hover {
+  background: #0f1422;
+}
+
+.stat {
+  position: relative;
+  overflow: hidden;
+}
+.stat::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 16px;
+  background: radial-gradient(
+    300px 120px at 80% -20%,
+    rgba(0, 132, 255, 0.16),
+    transparent 60%
+  );
+  pointer-events: none;
+}
+.stat-l {
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+.stat-v {
+  font-size: 30px;
+  font-weight: 800;
+  margin-top: 6px;
+}
+.stat-h {
+  color: var(--muted);
+  margin-top: 2px;
+  font-size: 12px;
+}
+
+.footer {
+  opacity: 0.55;
+  border-top: 1px solid var(--border);
+  padding: 12px 18px;
+  text-align: center;
+}
+
+.truncate {
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.skeleton {
+  border-radius: 10px;
+  background: linear-gradient(90deg, #121621, #161b27, #121621);
+  animation: sk 1.4s infinite;
+}
+@keyframes sk {
+  0% {
+    background-position: -120px 0;
+  }
+  100% {
+    background-position: 120px 0;
+  }
+}

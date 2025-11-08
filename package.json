@@ -1,0 +1,47 @@
+{
+  "name": "kovaaks-insight",
+  "version": "0.0.1",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "npm run dev --prefix frontend",
+    "build": "npm run build --prefix frontend",
+    "build:start": "npm run build && npm run start",
+    "dist": "electron-builder"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Personal performance tracker for Kovaaks FPS Aim Trainer",
+  "dependencies": {
+    "chokidar": "^4.0.3",
+    "express": "^5.1.0",
+    "node-fetch": "^2.7.0",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.12",
+    "electron-rebuild": "^3.2.9"
+  },
+  "build": {
+    "appId": "com.kovaaksinsight.app",
+    "productName": "Kovaaks Insight",
+    "files": [
+      "electron/**/*",
+      "backend/**/*",
+      "public/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "dir"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
