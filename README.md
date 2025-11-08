@@ -80,9 +80,35 @@ A powerful desktop application for tracking, analyzing, and visualizing your Kov
 
 ## 📥 Download
 
-**Pre-built releases coming soon!**
+### Windows Installer
 
-For now, you can build the app yourself using the instructions above.
+1. **Download the latest release**
+   - Go to [Releases](https://github.com/DylanMH/kovaaks-insight/releases/tag/v1.0.0)
+   - Download `Kovaaks-Insight-1.0.0-Setup.exe`
+
+2. **Run the installer**
+   - Double-click the downloaded `.exe` file
+
+3. **⚠️ Windows SmartScreen Warning**
+   
+   Windows Defender SmartScreen may block the installer because the app isn't digitally signed (code signing certificates are expensive!).
+   
+   **To proceed safely:**
+   - Click **"More info"** on the SmartScreen popup
+   - Click **"Run anyway"** button
+   
+   ![Windows SmartScreen Bypass](https://i.imgur.com/SmartScreen.png)
+   
+   *The app is safe - it's open source and you can review all the code in this repository. SmartScreen blocks unsigned apps by default to protect users.*
+
+4. **First launch setup**
+   - The app will guide you through selecting your Kovaak's stats folder
+   - Optionally select your playlists folder for easy imports
+   - Choose whether to enable auto-generated goals
+
+### Build From Source
+
+If you prefer to build the app yourself, follow the [Installation](#installation) instructions above.
 
 ## 🖥️ Usage
 
