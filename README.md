@@ -6,7 +6,7 @@ A powerful desktop application for tracking, analyzing, and visualizing your Kov
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Built with](https://img.shields.io/badge/built%20with-Electron-47848F)
 
-👉 [Download the latest](https://github.com/DylanMH/kovaaks-insight/releases/tag/v1.0.0)
+👉 [Download the latest](https://github.com/DylanMH/kovaaks-insight/releases/tag/v1.0.1)
 
 ## ✨ Features
 
@@ -83,7 +83,7 @@ A powerful desktop application for tracking, analyzing, and visualizing your Kov
 ### Windows Installer
 
 1. **Download the latest release**
-   - Go to [Releases](https://github.com/DylanMH/kovaaks-insight/releases/tag/v1.0.0)
+   - Go to [Releases](https://github.com/DylanMH/kovaaks-insight/releases/tag/v1.0.1)
    - Download `Kovaaks-Insight-1.0.0-Setup.exe`
 
 2. **Run the installer**
