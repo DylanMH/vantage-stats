@@ -13,8 +13,9 @@ export default function Nav() {
     return (
         <nav className="sticky top-0 z-40 -mx-4 mb-4 px-4 py-3 backdrop-blur border-b border-theme-primary" style={{ backgroundColor: 'var(--color-bg-primary)80' }}>
             <div className="max-w-[1160px] mx-auto flex items-center justify-between">
-                <Link to="/" className="font-bold tracking-wide text-theme-primary hover:text-theme-accent transition-colors">
-                    Vantage Stats
+                <Link to="/" className="flex items-center gap-2 font-bold tracking-wide text-theme-primary hover:text-theme-accent transition-colors">
+                    <img src="/vs-icon-logo.png" alt="Vantage Stats" className="w-8 h-8" />
+                    <span>Vantage Stats</span>
                 </Link>
                 <div className="flex gap-2 text-sm">
                     <Link to="/" className={getNavLinkClass("/")}>

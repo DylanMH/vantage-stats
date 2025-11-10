@@ -20,10 +20,8 @@ process.on('unhandledRejection', (err) => {
 const isDev = process.env.NODE_ENV === 'development' || fs.existsSync(path.join(__dirname, '../frontend/vite.config.ts'));
 
 function createWindow(showSetup = false) {
-    // Use .ico for Windows, .png for other platforms
-    const iconPath = process.platform === 'win32' 
-        ? path.join(__dirname, '../assets/icon.ico')
-        : path.join(__dirname, '../assets/icon.png');
+    // Use the new Vantage Stats logo
+    const iconPath = path.join(__dirname, '../assets/vs-icon-logo.png');
 
     mainWindow = new BrowserWindow({
         width: 1200,

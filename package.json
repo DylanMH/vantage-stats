@@ -50,7 +50,7 @@
     "win": {
       "target": [ "nsis" ],
       "artifactName": "Vantage-Stats-${version}-Setup.${ext}",
-      "icon": "assets/icon.ico"
+      "icon": "assets/vs-icon-logo.png"
     },
     "nsis": {
       "oneClick": true,
