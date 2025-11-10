@@ -1,17 +1,19 @@
-# 🎯 Kovaak's Insight
+# 🎯 Vantage Stats
 
-A powerful desktop application for tracking, analyzing, and visualizing your Kovaak's FPS Aim Trainer performance.
+A powerful desktop application for tracking, analyzing, and visualizing your FPS Aim Trainer performance.
+
+> **Disclaimer:** Vantage Stats is an independent, community-created tool and is not affiliated with, endorsed by, or associated with Kovaak's FPS Aim Trainer, Aim Lab, or any other FPS training software. All trademarks belong to their respective owners.
 
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Built with](https://img.shields.io/badge/built%20with-Electron-47848F)
 
-👉 [Download the latest](https://github.com/DylanMH/kovaaks-insight/releases)
+👉 [Download the latest](https://github.com/DylanMH/vantage-stats/releases)
 
 ## ✨ Features
 
 ### 📊 **Performance Tracking**
-- Automatic import of Kovaak's CSV statistics
+- Automatic import of FPS trainer CSV statistics
 - Real-time file watching for instant updates
 - Historical trend analysis with interactive charts
 - Track accuracy, score, TTK (Time to Kill), and more
@@ -23,7 +25,7 @@ A powerful desktop application for tracking, analyzing, and visualizing your Kov
 
 ### 📦 **Pack Management**
 - Create custom scenario packs
-- Import Kovaak's playlist JSON files as packs
+- Import playlist JSON files as packs
 - Filter stats by pack or individual scenarios
 - Quick-access pack statistics
 
@@ -55,14 +57,14 @@ A powerful desktop application for tracking, analyzing, and visualizing your Kov
 ### Prerequisites
 - Node.js (v16 or higher)
 - npm or yarn
-- Kovaak's FPS Aim Trainer installed
+- FPS Aim Trainer installed (Kovaak's, Aim Lab, etc.)
 
 ### Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/kovaaks-insight.git
-   cd kovaaks-insight
+   git clone https://github.com/yourusername/vantage-stats.git
+   cd vantage-stats
    ```
 
 2. **Install dependencies**
@@ -94,8 +96,8 @@ A powerful desktop application for tracking, analyzing, and visualizing your Kov
 ### Windows Installer
 
 1. **Download the latest release**
-   - Go to [Releases](https://github.com/DylanMH/kovaaks-insight/releases)
-   - Download `Kovaaks-Insight-Setup.exe`
+   - Go to [Releases](https://github.com/DylanMH/vantage-stats/releases)
+   - Download `Vantage-Stats-Setup.exe`
 
 2. **Run the installer**
    - Double-click the downloaded `.exe` file
@@ -113,7 +115,7 @@ A powerful desktop application for tracking, analyzing, and visualizing your Kov
    *The app is safe - it's open source and you can review all the code in this repository. SmartScreen blocks unsigned apps by default to protect users.*
 
 4. **First launch setup**
-   - The app will guide you through selecting your Kovaak's stats folder
+   - The app will guide you through selecting your FPS trainer stats folder
    - Optionally select your playlists folder for easy imports
    - Choose whether to enable auto-generated goals
 
@@ -124,8 +126,8 @@ If you prefer to build the app yourself, follow the [Installation](#installation
 ## 🖥️ Usage
 
 ### First Launch
-1. Select your Kovaak's stats folder: 
-   - Usually located at: `%LOCALAPPDATA%/FPSAimTrainer/Saved/SaveGames/Stats`
+1. Select your FPS trainer stats folder: 
+   - **Kovaak's**: `%LOCALAPPDATA%/FPSAimTrainer/Saved/SaveGames/Stats`
    - Or: `C:\Users\YourName\AppData\Local\FPSAimTrainer\Saved\SaveGames\Stats`
 
 2. (Optional) Select your playlists folder for importing playlists as packs:
@@ -136,7 +138,7 @@ If you prefer to build the app yourself, follow the [Installation](#installation
 ### Importing Playlists
 1. Go to **Settings** page
 2. Click **"📥 Import Playlist"** button
-3. Select a Kovaak's playlist JSON file
+3. Select a playlist JSON file from your trainer
 4. The playlist will be imported as a new pack with all scenarios
 
 ### Creating Goals
@@ -154,7 +156,7 @@ If you prefer to build the app yourself, follow the [Installation](#installation
 ## 📂 Project Structure
 
 ```
-kovaaks-insight/
+vantage-stats/
 ├── frontend/          # React frontend application
 │   ├── src/
 │   │   ├── components/   # Reusable UI components
@@ -197,13 +199,14 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Built for the Kovaak's FPS Aim Trainer community
+- Built for the FPS aim training community
 - Inspired by the need for better aim training analytics
 - Thanks to all contributors and users!
+- Not affiliated with any FPS training software
 
 ## 📞 Support
 
-- **Issues**: [GitHub Issues](https://github.com/DylanMH/kovaaks-insight/issues)
+- **Issues**: [GitHub Issues](https://github.com/DylanMH/vantage-stats/issues)
 
 ## 🗺️ Roadmap
 

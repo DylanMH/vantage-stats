@@ -14,7 +14,7 @@ export default function Nav() {
         <nav className="sticky top-0 z-40 -mx-4 mb-4 px-4 py-3 backdrop-blur border-b border-theme-primary" style={{ backgroundColor: 'var(--color-bg-primary)80' }}>
             <div className="max-w-[1160px] mx-auto flex items-center justify-between">
                 <Link to="/" className="font-bold tracking-wide text-theme-primary hover:text-theme-accent transition-colors">
-                    Kovaaks Insight
+                    Vantage Stats
                 </Link>
                 <div className="flex gap-2 text-sm">
                     <Link to="/" className={getNavLinkClass("/")}>

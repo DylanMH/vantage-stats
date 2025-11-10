@@ -1,5 +1,5 @@
 // backend/server.js
-// Main Express API server for Kovaaks Insight
+// Main Express API server for Vantage Stats
 const express = require('express');
 const path = require('path');
 const goals = require('./goals');

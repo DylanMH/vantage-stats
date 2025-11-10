@@ -71,7 +71,7 @@ app.whenReady().then(async () => {
     }
 
     // Database lives in userData directory (works in both dev and packaged app)
-    const backendDbPath = path.join(app.getPath("userData"), "kovaaks.db");
+    const backendDbPath = path.join(app.getPath("userData"), "vantage.db");
 
     // if config already exists, start everything and show dashboard
     if (cfg.stats_path && cfg.db_path) {
@@ -123,7 +123,7 @@ app.whenReady().then(async () => {
     ipcMain.handle("pick-folder", async () => {
         const res = await dialog.showOpenDialog(mainWindow, {
             properties: ["openDirectory"],
-            title: "Select Kovaaks Stats Folder"
+            title: "Select FPS Trainer Stats Folder"
         });
         return res.filePaths[0];
     });
@@ -213,7 +213,7 @@ app.whenReady().then(async () => {
     ipcMain.handle("pick-playlist-json", async () => {
         const result = await dialog.showOpenDialog(mainWindow, {
             properties: ["openFile"],
-            title: "Select Kovaak's Playlist JSON",
+            title: "Select Playlist JSON File",
             filters: [
                 { name: 'JSON Files', extensions: ['json'] }
             ]

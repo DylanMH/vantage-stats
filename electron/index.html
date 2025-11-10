@@ -3,19 +3,19 @@
 
 <body style="background: #0b0f14; color: white; font-family: sans-serif; padding: 20px;">
     <div style="max-width: 500px; margin: 0 auto;">
-        <h2 style="text-align: center; margin-bottom: 30px;">Kovaaks Insight Setup</h2>
+        <h2 style="text-align: center; margin-bottom: 30px;">Vantage Stats Setup</h2>
         
         <div id="setup-content">
             <p id="status" style="margin-bottom: 20px;">Welcome! Let's get your stats tracking set up.</p>
             <p id="instructions" style="font-size: 14px; opacity: 0.8; margin-bottom: 20px;">
-                Select your Kovaaks folders to begin.
+                Select your FPS trainer stats folder to begin.
             </p>
             
             <div id="folder-selection">
                 <!-- Stats Folder -->
                 <div style="margin-bottom: 20px;">
                     <label style="display: block; font-weight: bold; margin-bottom: 8px; font-size: 13px;">Stats Folder</label>
-                    <p style="font-size: 12px; opacity: 0.7; margin-bottom: 8px;">Where Kovaak's saves your performance stats (CSV files)</p>
+                    <p style="font-size: 12px; opacity: 0.7; margin-bottom: 8px;">Where your FPS trainer saves performance stats (CSV files)</p>
                     <code id="chosen-stats" style="display: block; background: #1b2440; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 12px; word-break: break-all; min-height: 20px;"></code>
                     <div style="display: flex; gap: 8px;">
                         <button id="pick-stats" style="background: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 14px; flex: 1;">
@@ -30,7 +30,7 @@
                 <!-- Playlists Folder -->
                 <div style="margin-bottom: 20px;">
                     <label style="display: block; font-weight: bold; margin-bottom: 8px; font-size: 13px;">Playlists Folder (Optional)</label>
-                    <p style="font-size: 12px; opacity: 0.7; margin-bottom: 8px;">Where Kovaak's saves downloaded playlists (JSON files)</p>
+                    <p style="font-size: 12px; opacity: 0.7; margin-bottom: 8px;">Where your trainer saves downloaded playlists (JSON files)</p>
                     <code id="chosen-playlists" style="display: block; background: #1b2440; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 12px; word-break: break-all; min-height: 20px;"></code>
                     <div style="display: flex; gap: 8px;">
                         <button id="pick-playlists" style="background: #059669; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 14px; flex: 1;">
@@ -193,7 +193,7 @@
                 chosenStatsEl.textContent = defaultPath;
                 continueBtn.disabled = false;
             } else {
-                alert('Could not find default Kovaaks installation. Please select folder manually.');
+                alert('Could not find default FPS trainer installation. Please select folder manually.');
             }
         };
         
@@ -213,7 +213,7 @@
                 playlistsFolder = defaultPath;
                 chosenPlaylistsEl.textContent = defaultPath;
             } else {
-                alert('Could not find default Kovaaks Playlists folder. Please select manually.');
+                alert('Could not find default playlists folder. Please select manually.');
             }
         };
         
@@ -229,7 +229,7 @@
             showLoading();
             
             // Database always lives in userData directory
-            const backendDbPath = path.join(__dirname, '../backend/kovaaks.db');
+            const backendDbPath = path.join(__dirname, '../backend/vantage.db');
             
             const cfg = {
                 stats_path: statsFolder,

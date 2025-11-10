@@ -1,4 +1,4 @@
-export type ThemeName = 'default' | 'kovaaks' | 'cyber';
+export type ThemeName = 'default' | 'orange' | 'cyber';
 
 export interface Theme {
   name: ThemeName;
@@ -79,9 +79,9 @@ export const themes: Record<ThemeName, Theme> = {
     },
   },
   
-  kovaaks: {
-    name: 'kovaaks',
-    displayName: 'Kovaak\'s Orange',
+  orange: {
+    name: 'orange',
+    displayName: 'Orange Accent',
     colors: {
       // Backgrounds
       bgPrimary: '#0a0a0a',
@@ -98,7 +98,7 @@ export const themes: Record<ThemeName, Theme> = {
       textSecondary: '#e5e5e5',
       textMuted: '#999999',
       
-      // Accents (Kovaak's signature orange/red)
+      // Accents (vibrant orange/red)
       accentPrimary: '#ff4500',
       accentSecondary: '#ff6b35',
       accentHover: '#cc3700',

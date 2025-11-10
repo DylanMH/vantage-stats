@@ -771,16 +771,21 @@ CONFIRM: Yes, delete everything!
       {/* About */}
       <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-white">About</h2>
-        <div className="space-y-2 text-sm">
+        <div className="space-y-3 text-sm">
           <p className="text-theme-muted">
-            <span className="font-medium text-white">Kovaaks Insight</span> v1.0.0
+            <span className="font-medium text-white">Vantage Stats</span> v1.1.0
           </p>
           <p className="text-theme-muted">
-            A comprehensive stat tracker for Kovaaks Aim Trainer with goals, coaching, and packs.
+            A comprehensive performance tracker for FPS Aim Trainers with goals, session tracking, and advanced analytics.
           </p>
           <p className="text-theme-muted">
             Built with Electron, React, and SQLite3.
           </p>
+          <div className="mt-4 pt-4 border-t border-theme-primary">
+            <p className="text-xs text-theme-muted leading-relaxed">
+              <span className="font-medium text-white">Disclaimer:</span> Vantage Stats is an independent, community-created tool and is not affiliated with, endorsed by, or associated with Kovaak's FPS Aim Trainer, Aim Lab, or any other FPS training software. All trademarks belong to their respective owners.
+            </p>
+          </div>
         </div>
       </div>
     </div>

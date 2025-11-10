@@ -5,7 +5,7 @@ export default function Layout({ children }: { children: ReactNode }) {
     return (
         <div className="min-h-screen bg-[#0f1115] text-[#e6edf3]">
             <nav className="flex justify-between items-center px-4 py-3 border-b border-[#222838] bg-[#0d1016]">
-                <div className="font-bold">Kovaaks Insight</div>
+                <div className="font-bold">Vantage Stats</div>
                 <div className="flex gap-2">
                     <a className="px-3 py-1.5 rounded border border-[#1b2440] bg-[#0d1424]">Dashboard</a>
                     <a className="px-3 py-1.5 rounded hover:bg-[#0f1422]">Stats</a>
