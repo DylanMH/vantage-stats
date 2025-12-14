@@ -38,10 +38,29 @@ export default function Settings() {
   const [editingFolder, setEditingFolder] = useState(false);
   const [tempFolder, setTempFolder] = useState("");
   const [isRescanning, setIsRescanning] = useState(false);
+  const [appVersion, setAppVersion] = useState<string>('');
   
   // Load settings on mount
   useEffect(() => {
     loadSettings();
+  }, []);
+
+  useEffect(() => {
+    const loadAppVersion = async () => {
+      try {
+        const electron = window.require?.('electron') as unknown as {
+          ipcRenderer?: { invoke?: (channel: string) => Promise<unknown> };
+        };
+        const version = await electron?.ipcRenderer?.invoke?.('get-app-version');
+        if (typeof version === 'string') {
+          setAppVersion(version);
+        }
+      } catch {
+        // Ignore: not running in Electron
+      }
+    };
+
+    loadAppVersion();
   }, []);
 
   const loadSettings = async () => {
@@ -57,6 +76,40 @@ export default function Settings() {
       }
     } catch (err) {
       console.error('Failed to load settings:', err);
+    }
+  };
+
+  const checkForUpdates = async () => {
+    try {
+      const electron = window.require?.('electron') as unknown as {
+        ipcRenderer?: { invoke?: (channel: string) => Promise<unknown> };
+      };
+
+      if (!electron?.ipcRenderer?.invoke) {
+        setToast({ message: 'Update checks are only available in the desktop app', type: 'info' });
+        return;
+      }
+
+      setToast({ message: 'Checking for updates…', type: 'info' });
+      const result = await electron.ipcRenderer.invoke('check-for-updates');
+
+      if (typeof result === 'object' && result != null && 'ok' in result) {
+        const ok = (result as { ok?: boolean }).ok;
+        if (ok) {
+          setToast({ message: 'Update check started. If an update is available you will be prompted.', type: 'success' });
+        } else {
+          const reason = (result as { reason?: string }).reason;
+          if (reason === 'not_packaged') {
+            setToast({ message: 'Update checks are not available in dev mode. Use the installed app to check updates.', type: 'info' });
+          } else {
+            setToast({ message: 'Update check failed. Please try again later.', type: 'error' });
+          }
+        }
+      } else {
+        setToast({ message: 'Update check started. If an update is available you will be prompted.', type: 'success' });
+      }
+    } catch {
+      setToast({ message: 'Update check failed. Please try again later.', type: 'error' });
     }
   };
 
@@ -785,10 +838,17 @@ CONFIRM: Yes, delete everything!
       {/* About */}
       <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-white">About</h2>
-        <div className="space-y-3 text-sm">
+        <div className="space-y-3 space-x-3 text-sm">
           <p className="text-theme-muted">
-            <span className="font-medium text-white">Vantage Stats</span> v1.2.0
+            <span className="font-medium text-white">Vantage Stats</span>{appVersion ? ` v${appVersion}` : ''}
           </p>
+          <button
+            type="button"
+            onClick={checkForUpdates}
+            className="text-left text-theme-accent hover:underline text-sm"
+          >
+            Check for updates
+          </button>
           <button
             type="button"
             onClick={openLatestRelease}

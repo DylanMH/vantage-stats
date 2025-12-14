@@ -2,6 +2,24 @@
 
 All notable changes to Vantage Stats will be documented in this file.
 
+## [1.2.2] - 2025-12-14
+
+### 🎨 UI/UX Improvements
+
+#### **Settings: Updates & Version Display**
+
+- Settings now displays the real installed app version (no more hardcoded version string)
+- Added a manual “Check for updates” button in Settings
+
+## [1.2.1] - 2025-12-14
+
+### ⚙️ App Updates
+
+#### **GitHub Releases Auto-Update Support**
+
+- Added support for checking GitHub Releases for updates on app launch (installed builds)
+- Added a Settings link to view the latest release on GitHub
+
 ## [1.2.0] - 2025-12-14
 
 ### 🎯 Major Features

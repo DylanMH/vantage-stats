@@ -17,10 +17,16 @@ let mainWindow;
 let watcher;
 let db;
 
-async function setupAutoUpdates() {
+let isAutoUpdaterInitialized = false;
+
+function ensureAutoUpdaterInitialized() {
     // Only run updater in packaged builds (not during `npm start` dev).
     if (!app.isPackaged) {
-        return;
+        return false;
+    }
+
+    if (isAutoUpdaterInitialized) {
+        return true;
     }
 
     // electron-updater will use the `publish` config from electron-builder (package.json)
@@ -68,6 +74,15 @@ async function setupAutoUpdates() {
         log.info('Update downloaded; restarting to install...');
         autoUpdater.quitAndInstall(false, true);
     });
+
+    isAutoUpdaterInitialized = true;
+    return true;
+}
+
+async function setupAutoUpdates() {
+    if (!ensureAutoUpdaterInitialized()) {
+        return;
+    }
 
     // Kick off the check
     try {
@@ -364,6 +379,24 @@ app.whenReady().then(async () => {
         } catch (error) {
             console.error('Error reading playlist JSON:', error);
             return { error: error.message };
+        }
+    });
+
+    ipcMain.handle('get-app-version', async () => {
+        return app.getVersion();
+    });
+
+    ipcMain.handle('check-for-updates', async () => {
+        if (!ensureAutoUpdaterInitialized()) {
+            return { ok: false, reason: 'not_packaged' };
+        }
+
+        try {
+            await autoUpdater.checkForUpdates();
+            return { ok: true };
+        } catch (e) {
+            log.error('Manual update check failed:', e);
+            return { ok: false, reason: 'error' };
         }
     });
 });
