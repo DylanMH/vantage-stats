@@ -230,6 +230,20 @@ export default function Settings() {
   const [packGame, setPackGame] = useState("");
   const [packTasks, setPackTasks] = useState("");
 
+  const openLatestRelease = () => {
+    const url = 'https://github.com/DylanMH/vantage-stats/releases/latest';
+    try {
+      const w = window as unknown as { require?: (moduleName: string) => unknown };
+      const electron = w.require?.('electron') as unknown as {
+        shell?: { openExternal?: (targetUrl: string) => void };
+      };
+      electron?.shell?.openExternal?.(url);
+    } catch {
+      // Fallback for non-electron contexts
+      window.open(url, '_blank', 'noopener,noreferrer');
+    }
+  };
+
   const handleCreatePack = async () => {
     if (!packName.trim() || !packTasks.trim()) {
       alert("Please enter a pack name and at least one task");
@@ -775,6 +789,13 @@ CONFIRM: Yes, delete everything!
           <p className="text-theme-muted">
             <span className="font-medium text-white">Vantage Stats</span> v1.2.0
           </p>
+          <button
+            type="button"
+            onClick={openLatestRelease}
+            className="text-left text-theme-accent hover:underline text-sm"
+          >
+            View latest release on GitHub
+          </button>
           <p className="text-theme-muted">
             A comprehensive performance tracker for FPS Aim Trainers with goals, session tracking, and advanced analytics.
           </p>

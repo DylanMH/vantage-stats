@@ -1,5 +1,7 @@
 // electron/main.js
 const { app, BrowserWindow, dialog, ipcMain } = require("electron");
+const log = require('electron-log');
+const { autoUpdater } = require('electron-updater');
 const path = require("path");
 const fs = require("fs");
 const { initDb } = require("../backend/db");
@@ -14,6 +16,66 @@ const { getSetting, setSetting } = require("../backend/settings");
 let mainWindow;
 let watcher;
 let db;
+
+async function setupAutoUpdates() {
+    // Only run updater in packaged builds (not during `npm start` dev).
+    if (!app.isPackaged) {
+        return;
+    }
+
+    // electron-updater will use the `publish` config from electron-builder (package.json)
+    // and your `repository` URL to locate GitHub Releases.
+    autoUpdater.autoDownload = false;
+    autoUpdater.logger = log;
+    log.transports.file.level = 'info';
+
+    autoUpdater.on('error', (err) => {
+        log.error('autoUpdater error:', err);
+    });
+
+    autoUpdater.on('update-available', async (info) => {
+        try {
+            const detail = info?.releaseNotes
+                ? (typeof info.releaseNotes === 'string' ? info.releaseNotes : '')
+                : '';
+
+            const res = await dialog.showMessageBox({
+                type: 'info',
+                buttons: ['Install and Restart', 'Not Now'],
+                defaultId: 0,
+                cancelId: 1,
+                title: 'Update Available',
+                message: `Vantage Stats ${info.version} is available.`,
+                detail: detail ? String(detail).slice(0, 800) : 'Would you like to download and install it now?'
+            });
+
+            if (res.response !== 0) {
+                return;
+            }
+
+            await autoUpdater.downloadUpdate();
+        } catch (e) {
+            log.error('Failed to prompt/download update:', e);
+        }
+    });
+
+    autoUpdater.on('update-not-available', () => {
+        log.info('No updates available');
+    });
+
+    autoUpdater.on('update-downloaded', () => {
+        // User already opted-in, so apply immediately.
+        log.info('Update downloaded; restarting to install...');
+        autoUpdater.quitAndInstall(false, true);
+    });
+
+    // Kick off the check
+    try {
+        await autoUpdater.checkForUpdates();
+    } catch (e) {
+        log.error('autoUpdater checkForUpdates failed:', e);
+    }
+}
 
 async function runPlaytimeMigrationIfNeeded(dbInstance) {
     const migrationKey = 'playtime_migration_v2_done';
@@ -143,6 +205,9 @@ app.whenReady().then(async () => {
         
         // Start backend API server
         startServer(db, cfg.port || 3000);
+
+        // Auto-updater (GitHub releases) - packaged builds only
+        await setupAutoUpdates();
 
         // One-time migration: recalculate durations (play time) for existing runs
         await runPlaytimeMigrationIfNeeded(db);
