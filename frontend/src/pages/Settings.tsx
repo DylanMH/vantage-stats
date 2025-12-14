@@ -773,7 +773,7 @@ CONFIRM: Yes, delete everything!
         <h2 className="text-xl font-bold mb-4 text-white">About</h2>
         <div className="space-y-3 text-sm">
           <p className="text-theme-muted">
-            <span className="font-medium text-white">Vantage Stats</span> v1.1.0
+            <span className="font-medium text-white">Vantage Stats</span> v1.2.0
           </p>
           <p className="text-theme-muted">
             A comprehensive performance tracker for FPS Aim Trainers with goals, session tracking, and advanced analytics.

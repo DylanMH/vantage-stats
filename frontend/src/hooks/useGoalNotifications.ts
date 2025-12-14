@@ -15,6 +15,7 @@ export function useGoalNotifications() {
   const [notifications, setNotifications] = useState<Goal[]>([]);
   const lastCheckRef = useRef<string | null>(null);
   const shownGoalsRef = useRef<Set<string>>(new Set()); // Track by "id-timestamp" for re-triggering
+  const storageKeyLastCheck = 'goalAchievementsLastCheck';
 
   const checkAchievements = useCallback(async () => {
     try {
@@ -54,8 +55,21 @@ export function useGoalNotifications() {
         });
       }
       
-      // Update last check time
-      lastCheckRef.current = new Date().toISOString();
+      // Update last check time (persist across restarts)
+      // Use max completed_at if present to avoid missing rapid successive completions.
+      const newestCompletedAt = achievements
+        .map((g: Goal) => g.completed_at)
+        .filter((v: unknown): v is string => typeof v === 'string' && v.length > 0)
+        .sort()
+        .at(-1);
+
+      const nextLastCheck = newestCompletedAt || new Date().toISOString();
+      lastCheckRef.current = nextLastCheck;
+      try {
+        localStorage.setItem(storageKeyLastCheck, nextLastCheck);
+      } catch {
+        // ignore storage failures
+      }
       
     } catch (error) {
       console.error('Failed to check goal achievements:', error);
@@ -64,6 +78,18 @@ export function useGoalNotifications() {
 
   // Check for achievements every 10 seconds
   useEffect(() => {
+    // Initialize lastCheckRef once per app install/run.
+    // If we don't have a stored timestamp, set it to now so old completions don't re-notify on every startup.
+    try {
+      const stored = localStorage.getItem(storageKeyLastCheck);
+      lastCheckRef.current = stored || new Date().toISOString();
+      if (!stored) {
+        localStorage.setItem(storageKeyLastCheck, lastCheckRef.current);
+      }
+    } catch {
+      lastCheckRef.current = new Date().toISOString();
+    }
+
     // Initial check
     checkAchievements();
     

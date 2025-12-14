@@ -48,7 +48,7 @@ export default function Profile() {
   const { data: todayRuns } = useQuery<DayRun[]>("todayRuns", "/api/runs/by-day?day=today", { refetchInterval: 30000 });
   const { data: yesterdayRuns } = useQuery<DayRun[]>("yesterdayRuns", "/api/runs/by-day?day=yesterday", { refetchInterval: 30000 });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data: runsRaw } = useQuery<any[]>("recentRuns", "/api/runs?limit=5");
+  const { data: runsRaw } = useQuery<any[]>("recentRuns", "/api/runs?limit=5", { refetchInterval: 5000 });
 
   const recent: RunRow[] = useMemo(() => {
     const src = runsRaw ?? [];

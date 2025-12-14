@@ -20,7 +20,14 @@ export default function SessionsList({ onCompare }: SessionsListProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
+
+    const startOfToday = new Date(now);
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const startOfSessionDay = new Date(date);
+    startOfSessionDay.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.round((startOfToday.getTime() - startOfSessionDay.getTime()) / (1000 * 60 * 60 * 24));
 
     if (diffDays === 0) return `Today at ${date.toLocaleTimeString()}`;
     if (diffDays === 1) return `Yesterday at ${date.toLocaleTimeString()}`;

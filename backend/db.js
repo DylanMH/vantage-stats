@@ -84,12 +84,15 @@ function initDb(dbPath) {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         description TEXT,
-        goal_type TEXT NOT NULL,        -- 'accuracy', 'score', 'consistency', 'playtime'
+        goal_type TEXT NOT NULL,        -- 'accuracy', 'score', 'consistency', 'playtime', 'ttk'
         target_value REAL NOT NULL,     -- target to achieve
         target_task_id INTEGER,         -- optional: specific task for goal
+        target_pack_id INTEGER,         -- optional: specific pack for goal
         target_timeframe INTEGER,       -- optional: days to complete goal
+        target_date TEXT,               -- optional: user-specified completion date
         is_active BOOLEAN DEFAULT 1,
         is_auto_generated BOOLEAN DEFAULT 0,
+        is_user_created BOOLEAN DEFAULT 0,
         created_at TEXT DEFAULT (datetime('now'))
       )
     `);
@@ -168,6 +171,15 @@ function initDb(dbPath) {
         task_scope TEXT,
         created_at TEXT DEFAULT (datetime('now')),
         last_used_at TEXT
+      )
+    `);
+
+        // Migrations table - track which migrations have been run
+        db.run(`
+      CREATE TABLE IF NOT EXISTS migrations (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        applied_at TEXT DEFAULT (datetime('now'))
       )
     `);
 

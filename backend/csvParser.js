@@ -2,6 +2,8 @@
 const fs = require('fs');
 const path = require('path');
 
+const DEBUG_CSV_PARSER = process.env.DEBUG_CSV_PARSER === 'true' || process.env.DEBUG_CSV_PARSER === '1';
+
 const KEYMAP = {
     scenario: ['scenario', 'scenario name', 'task', 'map', 'name'],
     score: ['score', 'final score', 'points'],
@@ -16,11 +18,52 @@ const KEYMAP = {
     dpi: ['dpi', 'dpi:'],
     sens_h: ['sensitivity', 'sensitivity h', 'sens', 'horiz sens', 'horiz sens:'],
     fov: ['fov', 'field of view', 'fov:'],
-    duration: ['duration', 'time played', 'session length', 'time (s)', 'time seconds', 'fight time', 'fight time:'],
+    duration: ['duration', 'time played', 'session length', 'time (s)', 'time seconds'],
     date: ['date', 'played at', 'time', 'timestamp', 'challenge start', 'challenge start:'],
 };
 
 function norm(s) { return String(s ?? '').trim().toLowerCase(); }
+
+function parseFilenameEndDate(filename) {
+    const base = path.basename(filename);
+    const m = base.match(/(\d{4})\.(\d{2})\.(\d{2})-(\d{2})\.(\d{2})\.(\d{2})/);
+    if (!m) return null;
+    const [_, Y, M, D, h, mi, se] = m;
+    const iso = `${Y}-${M}-${D}T${h}:${mi}:${se}`;
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function combineDateAndTime(dateObj, timeStr) {
+    if (!dateObj || !timeStr) return null;
+    const m = String(timeStr).trim().match(/^(\d{2}):(\d{2}):(\d{2})(?:\.(\d{1,3}))?$/);
+    if (!m) return null;
+    const [, hh, mm, ss, msRaw] = m;
+    const ms = (msRaw ?? '0').padEnd(3, '0').slice(0, 3);
+    const Y = dateObj.getFullYear();
+    const M = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const D = String(dateObj.getDate()).padStart(2, '0');
+    const iso = `${Y}-${M}-${D}T${hh}:${mm}:${ss}.${ms}`;
+    const d = new Date(iso);
+    return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function diffSeconds(start, end) {
+    if (!start || !end) return null;
+    let diffMs = end.getTime() - start.getTime();
+    if (diffMs < 0) diffMs += 24 * 60 * 60 * 1000;
+    const s = diffMs / 1000;
+    if (!Number.isFinite(s) || s <= 0 || s > 6 * 60 * 60) return null;
+    return s;
+}
+
+function parseScenarioSeconds(scenario) {
+    if (!scenario) return null;
+    const m = String(scenario).match(/\b(\d{1,4})\s*s\b/i);
+    if (!m) return null;
+    const n = parseInt(m[1], 10);
+    return Number.isFinite(n) && n > 0 ? n : null;
+}
 
 function parseFloatLocale(v) {
     if (v == null) return null;
@@ -239,8 +282,10 @@ function parseCsvToRun(filePath) {
     const accuracyIdx = header.findIndex(h => norm(h).includes('accuracy'));
     const overshotsIdx = header.findIndex(h => norm(h).includes('overshot'));
 
-    console.log('Header Indices:', { killNumIdx, timestampIdx, ttkIdx, shotsIdx, hitsIdx, overshotsIdx });
-    console.log('Header:', header);
+    if (DEBUG_CSV_PARSER) {
+        console.log('Header Indices:', { killNumIdx, timestampIdx, ttkIdx, shotsIdx, hitsIdx, overshotsIdx });
+        console.log('Header:', header);
+    }
 
     let totalShots = 0;
     let totalHits = 0;
@@ -248,6 +293,7 @@ function parseCsvToRun(filePath) {
     let ttkCount = 0;
     let totalOvershots = 0;
     let killCount = 0;
+    let lastKillTimestamp = null;
 
     for (let i = 1; i < lines.length; i++) {
         const cells = splitCSV(lines[i]);
@@ -255,11 +301,15 @@ function parseCsvToRun(filePath) {
         if (cells[killNumIdx] && !isNaN(parseInt(cells[killNumIdx]))) {
             killCount++;
             
+            if (timestampIdx >= 0 && cells[timestampIdx]) {
+                lastKillTimestamp = String(cells[timestampIdx]).trim();
+            }
+            
             const shots = parseIntSafe(cells[shotsIdx]);
             const hits = parseIntSafe(cells[hitsIdx]);
             const overshots = parseIntSafe(cells[overshotsIdx]);
             
-            if (killCount <= 3) {
+            if (DEBUG_CSV_PARSER && killCount <= 3) {
                 console.log(`Kill ${killCount}:`, { shots, hits, overshots, raw: cells.slice(0, 10) });
             }
             
@@ -290,7 +340,6 @@ function parseCsvToRun(filePath) {
     const scoreVal = parseFloatLocale(summaryData['Score:'] || summaryData['Score']);
     const scenarioVal = summaryData['Scenario:'] || summaryData['Scenario'];
     const avgTtkVal = parseFloatLocale(summaryData['Avg TTK:'] || summaryData['Avg TTK']);
-    const fightTimeVal = parseDurationFlexible(summaryData['Fight Time:'] || summaryData['Fight Time']);
     const overshotsVal = parseIntSafe(summaryData['Total Overshots:'] || summaryData['Total Overshots']);
     const accuracyVal = parsePercentFlexible(summaryData['Accuracy:'] || summaryData['Accuracy']);
     
@@ -300,7 +349,6 @@ function parseCsvToRun(filePath) {
     delete summaryData['Hit Count:'];
     delete summaryData['Miss Count:'];
     delete summaryData['Avg TTK:'];
-    delete summaryData['Fight Time:'];
     delete summaryData['Total Overshots:'];
     delete summaryData['Accuracy:'];
     
@@ -308,7 +356,6 @@ function parseCsvToRun(filePath) {
     if (scoreVal != null) summaryData['Score'] = scoreVal.toString();
     if (scenarioVal) summaryData['Scenario'] = scenarioVal;
     if (avgTtkVal != null) summaryData['Avg TTK'] = avgTtkVal.toString();
-    if (fightTimeVal != null) summaryData['Fight Time'] = fightTimeVal.toString();
     if (overshotsVal != null) summaryData['Total Overshots'] = overshotsVal.toString();
     if (accuracyVal != null) summaryData['Accuracy'] = accuracyVal.toString();
     
@@ -335,27 +382,32 @@ function parseCsvToRun(filePath) {
         if (ttkCount > 0 && !summaryData['Avg TTK'] && !summaryData['Avg TTK:']) {
             summaryData['Avg TTK'] = (totalTTK / ttkCount).toFixed(6);
         }
-        
-        // Calculate duration from first to last kill timestamp (only if not in summary)
-        if (timestampIdx >= 0 && !summaryData['Fight Time'] && !summaryData['Fight Time:']) {
-            const firstTimestamp = splitCSV(lines[1])[timestampIdx];
-            const lastTimestamp = splitCSV(lines[killCount])[timestampIdx];
-            if (firstTimestamp && lastTimestamp) {
-                const parseTime = (t) => {
-                    const parts = t.split(':').map(p => parseFloat(p));
-                    return parts[0] * 3600 + parts[1] * 60 + parts[2];
-                };
-                const duration = parseTime(lastTimestamp) - parseTime(firstTimestamp);
-                if (duration > 0) {
-                    summaryData['Fight Time'] = duration.toFixed(2);
-                }
-            }
-        }
     }
 
     // Map the summary data using our keymap
     const result = mapRow(summaryData, filePath);
-    
+
+    const filenameEnd = parseFilenameEndDate(filePath);
+    const challengeStartRaw = summaryData['Challenge Start'] || summaryData['Challenge Start:'] || null;
+    const challengeStart = combineDateAndTime(filenameEnd, challengeStartRaw);
+    const filenameDuration = diffSeconds(challengeStart, filenameEnd);
+
+    let computedDuration = filenameDuration;
+    if (computedDuration == null && filenameEnd && lastKillTimestamp && challengeStart) {
+        const lastKill = combineDateAndTime(filenameEnd, lastKillTimestamp);
+        computedDuration = diffSeconds(challengeStart, lastKill);
+    }
+    if (computedDuration == null) {
+        computedDuration = parseScenarioSeconds(summaryData['Scenario'] || summaryData['Scenario:'] || result.scenario);
+    }
+
+    if (computedDuration != null) {
+        result.duration = computedDuration;
+        if (result.score != null && computedDuration > 0) {
+            result.score_per_min = result.score / (computedDuration / 60);
+        }
+    }
+
     return result;
 }
 

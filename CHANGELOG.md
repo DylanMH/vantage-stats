@@ -1,12 +1,41 @@
 # Changelog
 
-All notable changes to Kovaak's Insight will be documented in this file.
+All notable changes to Vantage Stats will be documented in this file.
+
+## [1.2.0] - 2025-12-14
+
+### 🎯 Major Features
+
+#### **Task-Specific Goals (Auto-Generated)**
+
+- Auto-generates a small set of goals targeted at your most-played tasks
+- Goals are created for a specific task and metric (Accuracy / Score / TTK)
+- Avoids duplicates and limits the number of auto-generated task goals to prevent spam
+
+### 🛠️ Bug Fixes
+
+#### **Play Time & Session Accuracy**
+
+- Play time now reflects task duration (derived from CSV Challenge Start + filename timestamp)
+- Added a one-time automatic migration on launch to recalculate run durations for existing data
+- Sessions now compute play time from runs dynamically and clamp play time so it can never exceed session wall-clock duration
+- Fixed Sessions list “Today / Yesterday” labeling to use calendar day comparison
+
+#### **Goals & Notifications**
+
+- Fixed repeated “Goal Achieved” notification on every app launch by persisting achievement check state and improving backend time filtering
+
+#### **Stability & Developer Experience**
+
+- Reduced noisy CSV parser debug logs (opt-in via DEBUG_CSV_PARSER)
+- Fixed circular dependency warning in backend real-time update pipeline (watcher/server)
 
 ## [1.1.0] - 2025-11-09
 
 ### 🎮 Major Features
 
 #### **Session Tracking System**
+
 - **Manual Session Control**: Start and stop training sessions with a single click
 - **Session Naming**: Optionally name your sessions before starting (e.g., "Morning Practice", "Flick Training")
 - **Session Management**: View detailed session information including:
@@ -19,6 +48,7 @@ All notable changes to Kovaak's Insight will be documented in this file.
 - **Auto-refresh UI**: Session list automatically updates when sessions end (no manual page reload needed)
 
 #### **Performance Comparison Engine**
+
 - **Flexible Comparison Wizard**: Compare performance between any two time windows
   - **Session vs Session**: Compare two training sessions
   - **Preset Time Ranges**: Today, Yesterday, This Week, Last Week, This Month, Last Month
@@ -38,10 +68,12 @@ All notable changes to Kovaak's Insight will be documented in this file.
 ### 🎨 UI/UX Improvements
 
 #### **Navigation**
+
 - Reordered main navigation: Profile → Stats → **Sessions** → Goals → Settings
 - Sessions now prominently placed after Stats for easy access
 
 #### **Comparison Interface**
+
 - Removed redundant "Task Scope" step from comparison wizard
 - Cleaner, more focused comparison flow
 - Task-specific breakdowns always shown by default
@@ -50,6 +82,7 @@ All notable changes to Kovaak's Insight will be documented in this file.
 - Hover tooltips for percentile explanations
 
 #### **Session Detail Modal**
+
 - Fixed bug preventing typing in session name edit field
 - Fixed bug preventing typing in session notes field
 - Pre-filled input fields when editing
@@ -59,6 +92,7 @@ All notable changes to Kovaak's Insight will be documented in this file.
 ### ⚡ Performance & Backend
 
 #### **Code Optimization**
+
 - Comprehensive backend code review and optimization
 - Added extensive documentation and comments across all backend files
 - Organized API endpoints into clear sections with headers
@@ -67,11 +101,13 @@ All notable changes to Kovaak's Insight will be documented in this file.
 - Added helper functions for common patterns (time filtering, window labeling)
 
 #### **Database**
+
 - Efficient session tracking with timestamp-based run filtering
 - Proper indexes for fast session queries
 - Clean schema design with denormalized stats for performance
 
 #### **API Improvements**
+
 - Added PATCH method support for session updates
 - Consistent error handling patterns across all endpoints
 - Improved CORS configuration
@@ -91,6 +127,7 @@ All notable changes to Kovaak's Insight will be documented in this file.
 ### 🔧 Technical Details
 
 #### **New API Endpoints**
+
 - `POST /api/sessions/start` - Start a new session with optional name
 - `POST /api/sessions/:id/end` - End an active session and calculate stats
 - `GET /api/sessions` - Get all sessions (with optional active filter)
@@ -103,6 +140,7 @@ All notable changes to Kovaak's Insight will be documented in this file.
 - `DELETE /api/comparisons/:id` - Delete a comparison
 
 #### **New Frontend Components**
+
 - `SessionControl.tsx` - Session start/stop controls with live timer and name prompt
 - `SessionsList.tsx` - Browsable list of completed sessions with filtering
 - `SessionDetailModal.tsx` - Detailed session view with editing capabilities
@@ -111,6 +149,7 @@ All notable changes to Kovaak's Insight will be documented in this file.
 - `QuickPresets.tsx` - Quick-access comparison buttons for common comparisons
 
 #### **Database Schema Updates**
+
 - Added `sessions` table with fields:
   - `id`, `name`, `notes`
   - `started_at`, `ended_at`
@@ -119,6 +158,7 @@ All notable changes to Kovaak's Insight will be documented in this file.
 - Added `comparisons` table for saved comparison presets
 
 #### **Backend Modules Enhanced**
+
 - `server.js`: Added session and comparison endpoints, improved organization
 - `aggregator.js`: Already optimized with clean aggregation logic
 - `db.js`: Already optimized with proper schema and indexes
@@ -134,6 +174,7 @@ All notable changes to Kovaak's Insight will be documented in this file.
 ### 🎯 Version Numbering Convention
 
 Going forward, version numbers follow semantic versioning:
+
 - **Major releases** (X.0.0): Breaking changes or complete rewrites
 - **Minor releases** (X.Y.0): New features and significant updates ← **This release**
 - **Patch releases** (X.Y.Z): Bug fixes and small improvements
@@ -143,6 +184,7 @@ Going forward, version numbers follow semantic versioning:
 ## [1.0.1] - Previous Release
 
 ### Bug Fixes
+
 - Minor stability improvements
 - UI refinements
 
@@ -151,6 +193,7 @@ Going forward, version numbers follow semantic versioning:
 ## [1.0.0] - Initial Release
 
 ### Features
+
 - Automatic CSV import from Kovaak's stats folder
 - Real-time file watching for instant updates
 - Performance tracking (Score, Accuracy, TTK, etc.)

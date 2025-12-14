@@ -3,14 +3,66 @@ const { app, BrowserWindow, dialog, ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs");
 const { initDb } = require("../backend/db");
+const { runMigrations } = require("../backend/migrationRunner");
 const { startWatcher } = require("../backend/watcher");
 const { startServer, initializeStatsFolder } = require("../backend/server");
 const { backfillHashes } = require("../backend/backfill");
 const { importPlaylistsAsPacks } = require("../backend/playlistImporter");
+const { parseCsvToRun } = require("../backend/csvParser");
+const { getSetting, setSetting } = require("../backend/settings");
 
 let mainWindow;
 let watcher;
 let db;
+
+async function runPlaytimeMigrationIfNeeded(dbInstance) {
+    const migrationKey = 'playtime_migration_v2_done';
+    const alreadyDone = await getSetting(dbInstance, migrationKey, 'false');
+    if (alreadyDone === 'true' || alreadyDone === '1') {
+        return;
+    }
+
+    console.log('⏳ Running one-time playtime migration (recalculating run durations from CSVs)...');
+
+    const rows = await dbInstance.all(
+        `SELECT id, path, score FROM runs WHERE path IS NOT NULL AND TRIM(path) <> '' ORDER BY id ASC`
+    );
+
+    let updated = 0;
+    let skippedMissingFile = 0;
+    let skippedNoDuration = 0;
+    let errors = 0;
+
+    for (const row of rows) {
+        try {
+            if (!fs.existsSync(row.path)) {
+                skippedMissingFile++;
+                continue;
+            }
+
+            const parsed = parseCsvToRun(row.path);
+            const duration = parsed?.duration;
+            if (duration == null || !Number.isFinite(duration) || duration <= 0) {
+                skippedNoDuration++;
+                continue;
+            }
+
+            const score = parsed?.score != null ? parsed.score : row.score;
+            const scorePerMin = (score != null && duration > 0) ? score / (duration / 60) : null;
+
+            await dbInstance.run(
+                `UPDATE runs SET duration = ?, score_per_min = ? WHERE id = ?`,
+                [duration, scorePerMin, row.id]
+            );
+            updated++;
+        } catch {
+            errors++;
+        }
+    }
+
+    await setSetting(dbInstance, migrationKey, 'true');
+    console.log(`✅ Playtime migration complete: updated ${updated}/${rows.length} runs (missing files: ${skippedMissingFile}, no duration: ${skippedNoDuration}, errors: ${errors})`);
+}
 
 process.on('unhandledRejection', (err) => {
     console.error('UNHANDLED REJECTION:', err);
@@ -75,6 +127,9 @@ app.whenReady().then(async () => {
     if (cfg.stats_path && cfg.db_path) {
         db = initDb(backendDbPath);
         
+        // Run database migrations
+        await runMigrations(db);
+        
         // Initialize stats folder in database settings
         await initializeStatsFolder(db, cfg.stats_path);
         
@@ -88,6 +143,9 @@ app.whenReady().then(async () => {
         
         // Start backend API server
         startServer(db, cfg.port || 3000);
+
+        // One-time migration: recalculate durations (play time) for existing runs
+        await runPlaytimeMigrationIfNeeded(db);
         
         console.log('⏳ Initializing data... Please wait...');
         
@@ -132,6 +190,9 @@ app.whenReady().then(async () => {
         // Start backend services (database in userData directory)
         db = initDb(backendDbPath);
         
+        // Run database migrations
+        await runMigrations(db);
+        
         // Initialize stats folder in database settings
         await initializeStatsFolder(db, newCfg.stats_path);
         
@@ -160,6 +221,9 @@ app.whenReady().then(async () => {
         }
         
         startServer(db, newCfg.port || 3000);
+
+        // One-time migration: recalculate durations (play time) for existing runs
+        await runPlaytimeMigrationIfNeeded(db);
         
         console.log('⏳ Scanning CSV files... This may take a moment...');
         

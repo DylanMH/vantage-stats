@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const { parseCsvToRun } = require('./csvParser');
 const goals = require('./goals');
 const { getSetting, setSetting, getSettingBoolean } = require('./settings');
-const { notifyNewRun } = require('./server');
+const events = require('./events');
 
 function sha1(buf) {
     return crypto.createHash('sha1').update(buf).digest('hex');
@@ -246,7 +246,7 @@ async function startWatcher(statsPath, db) {
                 await setSetting(db, 'last_scan_timestamp', new Date().toISOString());
                 
                 // Notify frontend clients to refresh data
-                notifyNewRun();
+                events.emitNewRun();
             }
         } catch (err) {
             console.error('   ❌ Import error:', err.message);

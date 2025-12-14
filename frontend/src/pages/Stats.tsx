@@ -65,7 +65,7 @@ export default function Stats() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPack, timeframe]);
 
-  const { data: tasksRaw } = useQuery<RawTask[]>("tasksSummary", tasksUrl);
+  const { data: tasksRaw } = useQuery<RawTask[]>("tasksSummary", tasksUrl, { refetchInterval: 5000 });
   const { data: packs } = useQuery<Pack[]>("packs", "/api/packs");
 
   const tasks: TaskRow[] = useMemo(() => {

@@ -40,7 +40,7 @@ electron/userData/
 config.json
 
 # Test data (optional - users should use their own Kovaak's stats)
-CSV_Stats/
+CSV from stats/
 
 # Documentation markdown files (keep these for reference but they're internal notes)
 # You may want to keep some of these for the repo

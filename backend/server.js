@@ -1,10 +1,13 @@
 // backend/server.js
 // Main Express API server for Vantage Stats
 const express = require('express');
+const fs = require('fs');
 const path = require('path');
+const events = require('./events');
 const goals = require('./goals');
 const packs = require('./packs');
 const settings = require('./settings');
+const { parseCsvToRun } = require('./csvParser');
 const { scanAllCsvs } = require('./watcher');
 const { aggregateRuns, getTopRunsForTask, compareAggregations, resolveWindow } = require('./aggregator');
 
@@ -78,17 +81,21 @@ function getWindowLabel(windowDef) {
 
 let sseClients = [];
 
-/**
- * Notify all connected clients about new run data
- */
-function notifyNewRun() {
+function broadcastSseEvent(payload) {
     sseClients.forEach(client => {
-        client.write(`data: ${JSON.stringify({ type: 'new-run' })}\n\n`);
+        client.write(`data: ${JSON.stringify(payload)}\n\n`);
     });
 }
 
 function startServer(db, port = 3000) {
     const app = express();
+
+    // Subscribe once per server instance.
+    // This avoids watcher.js importing server.js (circular dependency).
+    events.removeAllListeners('new-run');
+    events.on('new-run', () => {
+        broadcastSseEvent({ type: 'new-run' });
+    });
     
     // Enable CORS for development (allows Vite dev server on port 5173 to access API)
     app.use((req, res, next) => {
@@ -232,6 +239,7 @@ function startServer(db, port = 3000) {
                     whereConditions.push('datetime(r.played_at) >= datetime(?)');
                     params.push(today.toISOString());
                 } else {
+                    // For week/month, use X days ago
                     whereConditions.push('datetime(r.played_at) >= datetime(?)');
                     params.push(daysAgoIso(numDays));
                 }
@@ -248,7 +256,7 @@ function startServer(db, port = 3000) {
             }
             
             const whereClause = whereConditions.length > 0 ? `WHERE ${whereConditions.join(' AND ')}` : '';
-
+            
             let fromClause = 'FROM runs r';
             if (pack_id) {
                 fromClause += ' LEFT JOIN tasks t ON t.id = r.task_id LEFT JOIN pack_tasks pt ON t.id = pt.task_id';
@@ -719,10 +727,12 @@ function startServer(db, port = 3000) {
                     gp.current_value,
                     gp.is_completed,
                     gp.completed_at,
-                    t.name as target_task_name
+                    t.name as target_task_name,
+                    p.name as target_pack_name
                 FROM goals g
                 LEFT JOIN goal_progress gp ON g.id = gp.goal_id
                 LEFT JOIN tasks t ON g.target_task_id = t.id
+                LEFT JOIN packs p ON g.target_pack_id = p.id
                 ${where.length ? 'WHERE ' + where.join(' AND ') : ''}
                 ORDER BY g.created_at DESC
             `;
@@ -812,7 +822,7 @@ function startServer(db, port = 3000) {
             // Now mark it as completed with current timestamp
             await db.run(`
                 INSERT OR REPLACE INTO goal_progress (goal_id, current_value, is_completed, completed_at)
-                VALUES (?, ?, 1, datetime('now'))
+                VALUES (?, ?, 1, ?)
             `, [goal.id, goal.target_value]);
 
             res.json({ 
@@ -842,7 +852,7 @@ function startServer(db, port = 3000) {
                 LEFT JOIN goal_progress gp ON g.id = gp.goal_id
                 LEFT JOIN tasks t ON g.target_task_id = t.id
                 WHERE gp.is_completed = 1 
-                ${since ? "AND gp.completed_at > datetime(?)" : ""}
+                ${since ? "AND julianday(gp.completed_at) > julianday(?)" : ""}
                 ORDER BY gp.completed_at DESC
                 LIMIT 10
             `, since ? [since] : []);
@@ -851,6 +861,225 @@ function startServer(db, port = 3000) {
         } catch (e) {
             console.error(e);
             res.status(500).json({ error: 'check achievements failed' });
+        }
+    });
+
+    // Get list of played tasks with basic info
+    app.get('/api/goals/played-tasks', async (_req, res) => {
+        try {
+            const tasks = await db.all(`
+                SELECT DISTINCT t.id, t.name, t.skill_type, COUNT(r.id) as run_count
+                FROM tasks t
+                JOIN runs r ON t.id = r.task_id
+                GROUP BY t.id, t.name, t.skill_type
+                ORDER BY t.name ASC
+            `);
+            res.json(tasks);
+        } catch (e) {
+            console.error(e);
+            res.status(500).json({ error: 'Failed to get played tasks' });
+        }
+    });
+
+    // Get current stats for a specific task
+    app.get('/api/tasks/:taskId/stats', async (req, res) => {
+        try {
+            const { taskId } = req.params;
+            
+            const stats = await db.get(`
+                SELECT 
+                    AVG(accuracy) as avg_accuracy,
+                    AVG(score) as avg_score,
+                    AVG(avg_ttk) as avg_ttk,
+                    COUNT(*) as total_runs
+                FROM runs
+                WHERE task_id = ? AND accuracy IS NOT NULL
+            `, [taskId]);
+            
+            if (!stats || stats.total_runs === 0) {
+                return res.status(404).json({ error: 'No runs found for this task' });
+            }
+            
+            res.json(stats);
+        } catch (e) {
+            console.error(e);
+            res.status(500).json({ error: 'Failed to get task stats' });
+        }
+    });
+
+    // Get current stats for a specific pack (average of all tasks in pack)
+    app.get('/api/packs/:packId/stats', async (req, res) => {
+        try {
+            const { packId } = req.params;
+            
+            const stats = await db.get(`
+                SELECT 
+                    AVG(r.accuracy) as avg_accuracy,
+                    AVG(r.score) as avg_score,
+                    AVG(r.avg_ttk) as avg_ttk,
+                    COUNT(DISTINCT r.id) as total_runs,
+                    COUNT(DISTINCT r.task_id) as tasks_played
+                FROM runs r
+                JOIN pack_tasks pt ON r.task_id = pt.task_id
+                WHERE pt.pack_id = ? AND r.accuracy IS NOT NULL
+            `, [packId]);
+            
+            if (!stats || stats.total_runs === 0) {
+                return res.status(404).json({ error: 'No runs found for this pack' });
+            }
+            
+            res.json(stats);
+        } catch (e) {
+            console.error(e);
+            res.status(500).json({ error: 'Failed to get pack stats' });
+        }
+    });
+
+    // Create a new user goal (task or pack specific)
+    app.post('/api/goals/create', async (req, res) => {
+        try {
+            const { 
+                title, 
+                description, 
+                goal_type, 
+                target_value, 
+                target_task_id, 
+                target_pack_id,
+                target_date,
+                metrics // array of selected metrics: ['accuracy', 'score', 'ttk']
+            } = req.body;
+            
+            if (!title || !goal_type || !target_value) {
+                return res.status(400).json({ error: 'Missing required fields: title, goal_type, target_value' });
+            }
+            
+            if (!target_task_id && !target_pack_id) {
+                return res.status(400).json({ error: 'Must specify either target_task_id or target_pack_id' });
+            }
+            
+            // Get current value for the goal
+            let currentValue = 0;
+            
+            if (target_task_id) {
+                // Task-specific goal
+                const stats = await db.get(`
+                    SELECT 
+                        AVG(CASE WHEN ? = 'accuracy' THEN accuracy
+                                WHEN ? = 'score' THEN score
+                                WHEN ? = 'ttk' THEN avg_ttk
+                            END) as current_value
+                    FROM runs
+                    WHERE task_id = ?
+                `, [goal_type, goal_type, goal_type, target_task_id]);
+                currentValue = stats?.current_value || 0;
+            } else if (target_pack_id) {
+                // Pack-specific goal (average of all tasks in pack)
+                const stats = await db.get(`
+                    SELECT 
+                        AVG(CASE WHEN ? = 'accuracy' THEN r.accuracy
+                                WHEN ? = 'score' THEN r.score
+                                WHEN ? = 'ttk' THEN r.avg_ttk
+                            END) as current_value
+                    FROM runs r
+                    JOIN pack_tasks pt ON r.task_id = pt.task_id
+                    WHERE pt.pack_id = ?
+                `, [goal_type, goal_type, goal_type, target_pack_id]);
+                currentValue = stats?.current_value || 0;
+            }
+            
+            // Validate target value based on goal type
+            if (goal_type === 'ttk') {
+                // For TTK, lower is better - target must be less than current
+                if (target_value >= currentValue) {
+                    return res.status(400).json({ 
+                        error: `TTK target (${target_value.toFixed(3)}s) must be lower than current (${currentValue.toFixed(3)}s)` 
+                    });
+                }
+            } else {
+                // For accuracy and score, higher is better - target must be more than current
+                if (target_value <= currentValue) {
+                    return res.status(400).json({ 
+                        error: `${goal_type.charAt(0).toUpperCase() + goal_type.slice(1)} target (${target_value}) must be higher than current (${currentValue.toFixed(1)})` 
+                    });
+                }
+            }
+            
+            // Create goal
+            const result = await db.run(`
+                INSERT INTO goals (
+                    title, description, goal_type, target_value, 
+                    target_task_id, target_pack_id, target_date,
+                    is_active, is_auto_generated, is_user_created
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, 1, 0, 1)
+            `, [
+                title, 
+                description || '', 
+                goal_type, 
+                target_value,
+                target_task_id || null,
+                target_pack_id || null,
+                target_date || null
+            ]);
+            
+            const goalId = result.lastID;
+            
+            // Check if goal is already completed
+            const isCompleted = goal_type === 'ttk' 
+                ? currentValue <= target_value
+                : currentValue >= target_value;
+            
+            // Initialize goal progress with completion status
+            await db.run(`
+                INSERT INTO goal_progress (goal_id, current_value, is_completed, completed_at)
+                VALUES (?, ?, ?, ?)
+            `, [
+                goalId, 
+                currentValue, 
+                isCompleted ? 1 : 0,
+                isCompleted ? new Date().toISOString() : null
+            ]);
+            
+            res.json({ 
+                id: goalId, 
+                title, 
+                current_value: currentValue,
+                target_value,
+                is_completed: isCompleted,
+                message: isCompleted ? 'Goal created and already completed!' : 'Goal created successfully' 
+            });
+        } catch (e) {
+            console.error(e);
+            res.status(500).json({ error: 'Failed to create goal' });
+        }
+    });
+
+    // Delete a user-created goal
+    app.delete('/api/goals/:id', async (req, res) => {
+        try {
+            const { id } = req.params;
+            
+            // Check if goal exists and is user-created
+            const goal = await db.get(`SELECT is_user_created FROM goals WHERE id = ?`, [id]);
+            
+            if (!goal) {
+                return res.status(404).json({ error: 'Goal not found' });
+            }
+            
+            if (!goal.is_user_created) {
+                return res.status(403).json({ error: 'Cannot delete auto-generated goals' });
+            }
+            
+            // Delete goal progress first
+            await db.run(`DELETE FROM goal_progress WHERE goal_id = ?`, [id]);
+            
+            // Delete goal
+            await db.run(`DELETE FROM goals WHERE id = ?`, [id]);
+            
+            res.json({ success: true, message: 'Goal deleted successfully' });
+        } catch (e) {
+            console.error(e);
+            res.status(500).json({ error: 'Failed to delete goal' });
         }
     });
 
@@ -1069,6 +1298,69 @@ function startServer(db, port = 3000) {
         }
     });
 
+    app.post('/api/runs/backfill-duration', async (req, res) => {
+        try {
+            const limit = req.body?.limit != null ? Number(req.body.limit) : null;
+            const onlyNull = req.body?.onlyNull === true;
+
+            if (limit != null && (!Number.isFinite(limit) || limit <= 0)) {
+                return res.status(400).json({ error: 'Invalid limit' });
+            }
+
+            const where = ['path IS NOT NULL', "TRIM(path) <> ''"]; 
+            if (onlyNull) {
+                where.push('duration IS NULL');
+            }
+
+            const sql = `SELECT id, path, score FROM runs WHERE ${where.join(' AND ')} ORDER BY id ASC${limit ? ' LIMIT ?' : ''}`;
+            const rows = await db.all(sql, limit ? [limit] : []);
+
+            let updated = 0;
+            let skippedMissingFile = 0;
+            let skippedNoDuration = 0;
+            let errors = 0;
+
+            for (const row of rows) {
+                try {
+                    if (!fs.existsSync(row.path)) {
+                        skippedMissingFile++;
+                        continue;
+                    }
+
+                    const parsed = parseCsvToRun(row.path);
+                    const duration = parsed?.duration;
+                    if (duration == null || !Number.isFinite(duration) || duration <= 0) {
+                        skippedNoDuration++;
+                        continue;
+                    }
+
+                    const score = parsed?.score != null ? parsed.score : row.score;
+                    const scorePerMin = (score != null && duration > 0) ? score / (duration / 60) : null;
+
+                    await db.run(
+                        `UPDATE runs SET duration = ?, score_per_min = ? WHERE id = ?`,
+                        [duration, scorePerMin, row.id]
+                    );
+                    updated++;
+                } catch (e) {
+                    errors++;
+                }
+            }
+
+            res.json({
+                success: true,
+                scanned: rows.length,
+                updated,
+                skippedMissingFile,
+                skippedNoDuration,
+                errors
+            });
+        } catch (e) {
+            console.error('Backfill duration error:', e);
+            res.status(500).json({ error: 'Failed to backfill durations' });
+        }
+    });
+
     // ===========================================
     // SESSION MANAGEMENT ENDPOINTS
     // ===========================================
@@ -1148,16 +1440,43 @@ function startServer(db, port = 3000) {
     app.get('/api/sessions', async (req, res) => {
         try {
             const { active } = req.query;
-            let sql = 'SELECT * FROM sessions';
             const params = [];
 
+            const where = [];
             if (active === 'true') {
-                sql += ' WHERE is_active = 1';
+                where.push('s.is_active = 1');
             }
 
-            sql += ' ORDER BY started_at DESC';
+            const whereClause = where.length ? `WHERE ${where.join(' AND ')}` : '';
 
-            const sessions = await db.all(sql, params);
+            const endTimeExpr = `COALESCE(s.ended_at, strftime('%Y-%m-%dT%H:%M:%fZ','now'))`;
+
+            const wallClockSecondsExpr = `MAX(0, CAST((julianday(${endTimeExpr}) - julianday(s.started_at)) * 86400 AS INTEGER))`;
+
+            const sessions = await db.all(
+                `SELECT
+                    s.*,
+                    (
+                        SELECT COUNT(*)
+                        FROM runs r
+                        WHERE r.played_at >= s.started_at
+                          AND r.played_at <= ${endTimeExpr}
+                    ) as total_runs,
+                    (
+                        SELECT
+                          CASE
+                            WHEN COALESCE(SUM(r.duration), 0) > ${wallClockSecondsExpr} THEN ${wallClockSecondsExpr}
+                            ELSE COALESCE(SUM(r.duration), 0)
+                          END
+                        FROM runs r
+                        WHERE r.played_at >= s.started_at
+                          AND r.played_at <= ${endTimeExpr}
+                    ) as total_duration
+                FROM sessions s
+                ${whereClause}
+                ORDER BY s.started_at DESC`,
+                params
+            );
             res.json(sessions);
         } catch (e) {
             console.error('Error fetching sessions:', e);
@@ -1190,7 +1509,27 @@ function startServer(db, port = 3000) {
                 ORDER BY r.played_at DESC
             `, [session.started_at, endTime]);
 
-            res.json({ ...session, runs });
+            const stats = await db.get(
+                `SELECT
+                    COUNT(*) as total_runs,
+                    COALESCE(SUM(duration), 0) as total_duration
+                FROM runs
+                WHERE played_at >= ?
+                  AND played_at <= ?`,
+                [session.started_at, endTime]
+            );
+
+            const wallClockSeconds = Math.max(
+                0,
+                Math.floor((new Date(endTime).getTime() - new Date(session.started_at).getTime()) / 1000)
+            );
+
+            const clampedStats = {
+                ...stats,
+                total_duration: Math.min(Number(stats?.total_duration ?? 0), wallClockSeconds)
+            };
+
+            res.json({ ...session, ...clampedStats, runs });
         } catch (e) {
             console.error('Error fetching session:', e);
             res.status(500).json({ error: 'Failed to fetch session details' });
@@ -1492,4 +1831,4 @@ async function initializeStatsFolder(db, statsPath) {
     console.log(`📁 Stats folder initialized: ${statsPath}`);
 }
 
-module.exports = { startServer, initializeStatsFolder, notifyNewRun };
+module.exports = { startServer, initializeStatsFolder };
