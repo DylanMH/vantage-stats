@@ -2,6 +2,15 @@
 
 All notable changes to Vantage Stats will be documented in this file.
 
+## [1.2.3] - 2025-12-14
+
+### 🎨 More UI/UX Improvements
+
+#### **Auto-Update Prompt UX**
+
+- Update prompt now appears after the app UI finishes loading (no longer blocks startup)
+- Simplified the update dialog content (no raw HTML release notes)
+
 ## [1.2.2] - 2025-12-14
 
 ### 🎨 UI/UX Improvements

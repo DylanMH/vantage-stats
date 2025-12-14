@@ -17,7 +17,38 @@ let mainWindow;
 let watcher;
 let db;
 
+let mainWindowDidFinishLoad = false;
+let pendingUpdateInfo = null;
+
 let isAutoUpdaterInitialized = false;
+
+async function showUpdatePrompt(info) {
+    if (!mainWindow || !mainWindowDidFinishLoad) {
+        pendingUpdateInfo = info;
+        return;
+    }
+
+    try {
+        const currentVersion = app.getVersion();
+        const res = await dialog.showMessageBox(mainWindow, {
+            type: 'info',
+            buttons: ['Install and Restart', 'Not Now'],
+            defaultId: 0,
+            cancelId: 1,
+            title: 'Update Available',
+            message: 'A new version of Vantage Stats is available.',
+            detail: `Current: ${currentVersion}   New: ${info.version}\n\nWould you like to download and install it now?`
+        });
+
+        if (res.response !== 0) {
+            return;
+        }
+
+        await autoUpdater.downloadUpdate();
+    } catch (e) {
+        log.error('Failed to prompt/download update:', e);
+    }
+}
 
 function ensureAutoUpdaterInitialized() {
     // Only run updater in packaged builds (not during `npm start` dev).
@@ -40,29 +71,7 @@ function ensureAutoUpdaterInitialized() {
     });
 
     autoUpdater.on('update-available', async (info) => {
-        try {
-            const detail = info?.releaseNotes
-                ? (typeof info.releaseNotes === 'string' ? info.releaseNotes : '')
-                : '';
-
-            const res = await dialog.showMessageBox({
-                type: 'info',
-                buttons: ['Install and Restart', 'Not Now'],
-                defaultId: 0,
-                cancelId: 1,
-                title: 'Update Available',
-                message: `Vantage Stats ${info.version} is available.`,
-                detail: detail ? String(detail).slice(0, 800) : 'Would you like to download and install it now?'
-            });
-
-            if (res.response !== 0) {
-                return;
-            }
-
-            await autoUpdater.downloadUpdate();
-        } catch (e) {
-            log.error('Failed to prompt/download update:', e);
-        }
+        await showUpdatePrompt(info);
     });
 
     autoUpdater.on('update-not-available', () => {
@@ -164,6 +173,16 @@ function createWindow(showSetup = false) {
         icon: iconPath,
     });
 
+    mainWindowDidFinishLoad = false;
+    mainWindow.webContents.once('did-finish-load', () => {
+        mainWindowDidFinishLoad = true;
+        if (pendingUpdateInfo) {
+            const info = pendingUpdateInfo;
+            pendingUpdateInfo = null;
+            showUpdatePrompt(info);
+        }
+    });
+
     if (showSetup) {
         // Load the setup page (basic HTML for folder selection)
         mainWindow.loadFile(path.join(__dirname, "index.html"));
@@ -221,9 +240,6 @@ app.whenReady().then(async () => {
         // Start backend API server
         startServer(db, cfg.port || 3000);
 
-        // Auto-updater (GitHub releases) - packaged builds only
-        await setupAutoUpdates();
-
         // One-time migration: recalculate durations (play time) for existing runs
         await runPlaytimeMigrationIfNeeded(db);
         
@@ -242,6 +258,9 @@ app.whenReady().then(async () => {
         
         // Show dashboard immediately after data is ready
         createWindow(false); // Show React dashboard
+
+        // Auto-updater (GitHub releases) - packaged builds only
+        setupAutoUpdates();
     } else {
         // Show setup screen first
         createWindow(true); // Show setup HTML
