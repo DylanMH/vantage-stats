@@ -57,4 +57,5 @@ jobs:
             --title "Vantage Stats ${{ github.ref_name }}" `
             --notes-file release_notes.md `
             dist/*.exe `
-            dist/*.blockmap
+            dist/*.blockmap `
+            dist/latest.yml
