@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useQuery, getApiUrl } from "../hooks/useApi";
 import CreateTaskGoalModal from "../components/CreateTaskGoalModal";
 import CreatePackGoalModal from "../components/CreatePackGoalModal";
+import ConfirmDialog from "../components/ConfirmDialog";
 
 type Goal = {
   id: number;
@@ -28,6 +29,11 @@ export default function Goals() {
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [showTaskModal, setShowTaskModal] = useState(false);
   const [showPackModal, setShowPackModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    isOpen: boolean;
+    goalId: number;
+    goalTitle: string;
+  }>({ isOpen: false, goalId: 0, goalTitle: '' });
   
   const { data: activeGoals, refetch: refetchActive } = useQuery<Goal[]>("activeGoals", "/api/goals?active=true", {
     refetchInterval: 5000 // Poll every 5 seconds for live updates
@@ -67,10 +73,13 @@ export default function Goals() {
     setShowPackModal(false);
   };
 
-  const handleDeleteGoal = async (goalId: number, goalTitle: string) => {
-    if (!confirm(`Are you sure you want to delete the goal "${goalTitle}"?`)) {
-      return;
-    }
+  const handleDeleteGoal = (goalId: number, goalTitle: string) => {
+    setDeleteConfirm({ isOpen: true, goalId, goalTitle });
+  };
+
+  const confirmDeleteGoal = async () => {
+    const { goalId } = deleteConfirm;
+    setDeleteConfirm({ isOpen: false, goalId: 0, goalTitle: '' });
 
     try {
       const response = await fetch(getApiUrl(`/api/goals/${goalId}`), {
@@ -377,6 +386,16 @@ export default function Goals() {
           onGoalCreated={handleGoalCreated}
         />
       )}
+      <ConfirmDialog
+        isOpen={deleteConfirm.isOpen}
+        title="Delete Goal"
+        message={`Are you sure you want to delete "${deleteConfirm.goalTitle}"? This cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDeleteGoal}
+        onCancel={() => setDeleteConfirm({ isOpen: false, goalId: 0, goalTitle: '' })}
+        danger={true}
+      />
     </div>
   );
 }

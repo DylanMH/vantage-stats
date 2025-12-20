@@ -1,6 +1,6 @@
 {
   "name": "vantage-stats",
-  "version": "1.3.3",
+  "version": "1.3.4",
   "main": "electron/main.js",
   "description": "Vantage Stats - Personal performance tracker for FPS Aim Trainers",
   "repository": {

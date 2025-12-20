@@ -226,25 +226,31 @@ module.exports = (db) => {
 
             const result = await db.run(`
                 INSERT INTO goals (
-                    title, description, goal_type, target_value, current_value,
-                    target_task_id, target_pack_id, 
-                    time_window, time_window_hours, time_window_type,
-                    is_active, is_completed, is_user_created
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, 0, 1)
+                    title, description, goal_type, target_value,
+                    target_task_id, target_pack_id,
+                    is_active, is_user_created
+                ) VALUES (?, ?, ?, ?, ?, ?, 1, 1)
             `, [
                 title, 
                 description || null, 
                 goal_type, 
-                target_value, 
-                currentValue,
+                target_value,
                 target_task_id || null, 
-                target_pack_id || null,
-                time_window || null,
-                time_window_hours || null,
-                time_window_type || null
+                target_pack_id || null
             ]);
 
-            const newGoal = await db.get('SELECT * FROM goals WHERE id = ?', [result.lastID]);
+            // Create goal_progress entry
+            await db.run(`
+                INSERT INTO goal_progress (goal_id, current_value, is_completed)
+                VALUES (?, ?, 0)
+            `, [result.lastID, currentValue]);
+
+            const newGoal = await db.get(`
+                SELECT g.*, gp.current_value, gp.is_completed
+                FROM goals g
+                LEFT JOIN goal_progress gp ON g.id = gp.goal_id
+                WHERE g.id = ?
+            `, [result.lastID]);
             res.json(newGoal);
         } catch (e) {
             console.error(e);

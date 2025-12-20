@@ -16,7 +16,7 @@ export default function Nav() {
     };
 
     return (
-        <nav className="sticky top-0 z-40 -mx-4 mb-4 px-4 py-3 backdrop-blur border-b border-theme-primary" style={{ backgroundColor: 'var(--color-bg-primary)80' }}>
+        <nav className="sticky top-0 z-50 -mx-4 mb-4 px-4 py-3 backdrop-blur-md bg-theme-secondary opacity-90 border-b border-theme-primary">
             <div className="max-w-[1600px] mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Link to="/" className="flex items-center gap-2 font-bold tracking-wide text-theme-primary hover:text-theme-accent transition-colors">

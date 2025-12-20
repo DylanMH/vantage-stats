@@ -2,6 +2,38 @@
 
 All notable changes to Vantage Stats will be documented in this file.
 
+## [1.3.4] - 2025-12-20
+
+### 🎨 UI/UX Improvements
+
+#### **Navigation Bar Enhancements**
+
+- Fixed sticky navigation behavior - nav now properly stays at top when scrolling
+- Added backdrop blur effect with 90% opacity for modern frosted glass appearance
+- Removed `overflow-x: hidden` from body CSS that was preventing sticky positioning
+- Nav background matches theme-secondary color for consistent theming
+
+#### **Icon Component Refactoring**
+
+- Extracted hardcoded SVG icons from UpdateDialog into reusable icon components
+- Created `CloudDownloadIcon`, `DocumentIcon`, and `DownloadIcon` components
+- Cleaner code structure and easier icon maintenance
+
+#### **Goal Deletion Dialog**
+
+- Replaced native browser `confirm()` with themed `ConfirmDialog` component in Goals page
+- Consistent with app theming and better user experience
+- Shows goal name in confirmation message for clarity
+
+### 🐛 Bug Fixes
+
+#### **Goal Creation Backend Fix**
+
+- Fixed 500 error when creating task-specific and pack-specific goals
+- Issue: Backend was trying to insert into non-existent columns
+- Solution: Aligned INSERT statement with actual database schema
+- Properly creates goal_progress entries separately from goals table
+
 ## [1.3.3] - 2025-12-20
 
 ### 🐛 Bug Fixes
