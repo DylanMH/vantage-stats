@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import type { Session } from "../../types/sessions";
+import ConfirmDialog from "../ConfirmDialog";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
@@ -40,6 +41,7 @@ export default function SessionDetailModal({ sessionId, onClose, onUpdate }: Ses
   const [newName, setNewName] = useState('');
   const [newNotes, setNewNotes] = useState('');
   const [saving, setSaving] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   // Fetch session details
   useEffect(() => {
@@ -106,11 +108,12 @@ export default function SessionDetailModal({ sessionId, onClose, onUpdate }: Ses
     }
   };
 
-  const handleDelete = async () => {
-    if (!confirm('Are you sure you want to delete this session? This cannot be undone.')) {
-      return;
-    }
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
 
+  const handleDeleteConfirm = async () => {
+    setShowDeleteConfirm(false);
     try {
       const response = await fetch(`${API_URL}/api/sessions/${sessionId}`, {
         method: 'DELETE'
@@ -250,7 +253,7 @@ export default function SessionDetailModal({ sessionId, onClose, onUpdate }: Ses
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={handleDelete}
+              onClick={handleDeleteClick}
               className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm"
             >
               Delete
@@ -456,6 +459,17 @@ export default function SessionDetailModal({ sessionId, onClose, onUpdate }: Ses
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        title="Delete Session"
+        message={`Are you sure you want to delete "${session?.name || `Session ${sessionId}`}"? This cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={handleDeleteConfirm}
+        onCancel={() => setShowDeleteConfirm(false)}
+        danger={true}
+      />
     </div>
   );
 }

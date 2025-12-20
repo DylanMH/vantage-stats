@@ -2,6 +2,26 @@
 
 All notable changes to Vantage Stats will be documented in this file.
 
+## [1.3.3] - 2025-12-20
+
+### 🐛 Bug Fixes
+
+#### **Logo Asset Loading in Production Builds**
+
+- Fixed logo failing to load in GitHub Actions builds (ERR_FILE_NOT_FOUND)
+- Issue: Direct path reference `/vs-icon-logo.png` wasn't being processed by Vite build
+- Solution: Changed to module import so Vite properly bundles and hashes the asset
+- Logo now loads correctly in all production builds
+
+### 🎨 UI/UX Improvements
+
+#### **Session Deletion Confirmation**
+
+- Replaced native browser `confirm()` dialog with themed `ConfirmDialog` component
+- Session deletion now uses consistent in-app modal matching application theme
+- Shows session name in confirmation message for clarity
+- Provides "Delete" and "Cancel" buttons with danger styling
+
 ## [1.3.2] - 2025-12-20
 
 ### 🎨 UI/UX Improvements

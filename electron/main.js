@@ -413,4 +413,21 @@ app.whenReady().then(async () => {
         }
     });
 
+    // DEV MODE: Test update dialog (Ctrl+Shift+U)
+    if (isDev) {
+        mainWindow.webContents.on('before-input-event', (event, input) => {
+            if (input.control && input.shift && input.key.toLowerCase() === 'u') {
+                console.log('🧪 DEV: Simulating update available...');
+                const mockUpdateInfo = {
+                    version: '1.4.0',
+                    releaseName: 'Test Update',
+                    releaseDate: new Date().toISOString(),
+                    releaseNotes: '### Test Features\n\n- Feature 1: New awesome feature\n- Feature 2: Another cool thing\n- Bug Fix: Fixed something important\n\nThis is a test update dialog triggered in dev mode!'
+                };
+                mainWindow.webContents.send('update-available', mockUpdateInfo);
+            }
+        });
+        console.log('🧪 DEV MODE: Press Ctrl+Shift+U to test update dialog');
+    }
+
 });
