@@ -28,6 +28,21 @@ jobs:
       - name: Build frontend
         run: npm run build --prefix frontend
 
+      - name: Extract release notes from CHANGELOG
+        id: changelog
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          $content = Get-Content CHANGELOG.md -Raw
+          $pattern = "(?s)## \[$version\].*?(?=## \[|$)"
+          if ($content -match $pattern) {
+            $releaseNotes = $matches[0] -replace "## \[$version\][^\n]*\n", ""
+            $releaseNotes | Out-File -FilePath release_notes.md -Encoding utf8
+            echo "Release notes extracted successfully"
+          } else {
+            echo "Could not find changelog for v$version"
+            echo "# Release v$version" | Out-File -FilePath release_notes.md -Encoding utf8
+          }
+
       - name: Build and publish Electron app
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
