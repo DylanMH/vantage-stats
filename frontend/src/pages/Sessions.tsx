@@ -55,13 +55,14 @@ export default function Sessions() {
         <ComparisonView
           result={comparisonResult}
           onClose={() => setComparisonResult(null)}
+          onRecompare={(newResult) => setComparisonResult(newResult)}
         />
       )}
 
       {/* Recent Sessions */}
       <SessionsList 
         key={sessionsKey}
-        onCompare={(_sessionId: number) => {
+        onCompare={() => {
           // Pre-fill wizard with selected session
           // TODO: Pass session ID to wizard for pre-filling
           setShowWizard(true);

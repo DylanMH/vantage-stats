@@ -1,11 +1,50 @@
-import type { ComparisonResult } from "../../types/sessions";
+import { useState } from "react";
+import type { ComparisonResult, Session } from "../../types/sessions";
+import { useQuery } from "../../hooks/useApi";
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 type ComparisonViewProps = {
   result: ComparisonResult;
   onClose: () => void;
+  onRecompare?: (result: ComparisonResult) => void;
 };
 
-export default function ComparisonView({ result, onClose }: ComparisonViewProps) {
+export default function ComparisonView({ result, onClose, onRecompare }: ComparisonViewProps) {
+  const [loading, setLoading] = useState(false);
+  const { data: sessions } = useQuery<Session[]>('sessions', '/api/sessions');
+  const completedSessions = sessions?.filter(s => s.is_active === 0) || [];
+  
+  // Extract session IDs if this is a session comparison
+  const isSessionComparison = result.meta.leftSessionId && result.meta.rightSessionId;
+  const [leftSessionId, setLeftSessionId] = useState(result.meta.leftSessionId || 0);
+  const [rightSessionId, setRightSessionId] = useState(result.meta.rightSessionId || 0);
+
+  const handleSessionChange = async () => {
+    if (!onRecompare || !isSessionComparison) return;
+    
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/api/comparisons/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          left: { type: 'session', sessionId: leftSessionId },
+          right: { type: 'session', sessionId: rightSessionId },
+          taskScope: 'all'
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to run comparison');
+      const newResult = await response.json();
+      onRecompare(newResult);
+    } catch (error) {
+      console.error('Error running comparison:', error);
+      alert('Failed to run comparison');
+    } finally {
+      setLoading(false);
+    }
+  };
   const formatNumber = (num: number | null) => {
     if (num === null || num === undefined) return '—';
     return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -24,7 +63,7 @@ export default function ComparisonView({ result, onClose }: ComparisonViewProps)
   const DiffChip = ({ value, pct, metric }: { value: number; pct: number | null; metric: string }) => {
     // For TTK, lower is better; for others, higher is better
     const isImprovement = metric === 'ttk' ? value < 0 : value > 0;
-    const color = isImprovement ? 'text-green-400' : value < 0 ? 'text-red-400' : 'text-theme-muted';
+    const color = isImprovement ? 'text-lime-400' : value < 0 ? 'text-red-400' : 'text-theme-muted';
     const arrow = value > 0 ? '↑' : value < 0 ? '↓' : '→';
     
     // Format value based on metric type
@@ -51,11 +90,69 @@ export default function ComparisonView({ result, onClose }: ComparisonViewProps)
   return (
     <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h2 className="text-2xl font-bold text-white">{leftLabel} vs {rightLabel}</h2>
-          <p className="text-theme-muted text-sm mt-1">
-            {leftLabel}: {result.meta.leftRunCount} runs • {rightLabel}: {result.meta.rightRunCount} runs
-          </p>
+        <div className="flex-1">
+          <h2 className="text-2xl font-bold text-white mb-3">Comparison Results</h2>
+          
+          {/* Session Switcher - only show for session comparisons */}
+          {isSessionComparison && onRecompare ? (
+            <div className="flex items-center gap-4 py-2">
+              <div className="flex items-center gap-3 flex-1">
+                <div className="w-1 h-10 bg-blue-400 rounded" />
+                <select
+                  value={leftSessionId}
+                  onChange={(e) => setLeftSessionId(parseInt(e.target.value))}
+                  className="flex-1 px-4 py-2.5 bg-theme-tertiary border-2 border-blue-400/50 rounded text-white text-sm focus:border-blue-400 focus:outline-none"
+                >
+                  {completedSessions.map((session) => (
+                    <option key={session.id} value={session.id}>
+                      {session.is_practice === 1 ? '🎯 ' : ''}{session.name || `Session ${session.id}`} - {new Date(session.started_at).toLocaleDateString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <span className="text-theme-muted font-bold text-lg px-2">vs</span>
+              
+              <div className="flex items-center gap-3 flex-1">
+                <select
+                  value={rightSessionId}
+                  onChange={(e) => setRightSessionId(parseInt(e.target.value))}
+                  className="flex-1 px-4 py-2.5 bg-theme-tertiary border-2 border-green-400/50 rounded text-white text-sm focus:border-green-400 focus:outline-none"
+                >
+                  {completedSessions.map((session) => (
+                    <option key={session.id} value={session.id}>
+                      {session.is_practice === 1 ? '🎯 ' : ''}{session.name || `Session ${session.id}`} - {new Date(session.started_at).toLocaleDateString()}
+                    </option>
+                  ))}
+                </select>
+                <div className="w-1 h-10 bg-green-400 rounded" />
+              </div>
+              
+              {(leftSessionId !== result.meta.leftSessionId || rightSessionId !== result.meta.rightSessionId) && (
+                <button
+                  onClick={handleSessionChange}
+                  disabled={loading}
+                  className="px-5 py-2.5 bg-theme-accent hover:bg-theme-accent/80 disabled:bg-theme-accent/50 disabled:cursor-not-allowed text-white text-sm rounded font-medium transition-colors whitespace-nowrap"
+                >
+                  {loading ? '...' : 'Compare'}
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-6 bg-blue-400 rounded" />
+                <span className="text-blue-400 font-semibold">{leftLabel}</span>
+                <span className="text-theme-muted text-sm">({result.meta.leftRunCount} runs)</span>
+              </div>
+              <span className="text-theme-muted">vs</span>
+              <div className="flex items-center gap-2">
+                <span className="text-green-400 font-semibold">{rightLabel}</span>
+                <div className="w-1 h-6 bg-green-400 rounded" />
+                <span className="text-theme-muted text-sm">({result.meta.rightRunCount} runs)</span>
+              </div>
+            </div>
+          )}
         </div>
         <button
           onClick={onClose}
@@ -73,9 +170,9 @@ export default function ComparisonView({ result, onClose }: ComparisonViewProps)
           <div className="bg-theme-tertiary border border-theme-secondary rounded-lg p-5">
             <p className="text-xs text-theme-muted uppercase font-semibold mb-3 text-center">Score</p>
             <div className="flex items-center justify-between mb-4">
-              <div className="text-center">
-                <p className="text-xs text-theme-muted mb-1">{leftLabel}</p>
-                <p className="text-2xl font-bold text-blue-300 opacity-60">
+              <div className="text-center flex-1">
+                <p className="text-xs text-blue-400 font-semibold mb-1">{leftLabel}</p>
+                <p className="text-2xl font-bold text-blue-400">
                   {formatNumber(result.overall.left.avg_score)}
                 </p>
               </div>
@@ -84,9 +181,9 @@ export default function ComparisonView({ result, onClose }: ComparisonViewProps)
                 pct={result.overall.diffs.scorePct}
                 metric="score"
               />
-              <div className="text-center">
-                <p className="text-xs text-theme-muted mb-1">{rightLabel}</p>
-                <p className="text-2xl font-bold text-blue-400">
+              <div className="text-center flex-1">
+                <p className="text-xs text-green-400 font-semibold mb-1">{rightLabel}</p>
+                <p className="text-2xl font-bold text-green-400">
                   {formatNumber(result.overall.right.avg_score)}
                 </p>
               </div>
@@ -111,9 +208,9 @@ export default function ComparisonView({ result, onClose }: ComparisonViewProps)
           <div className="bg-theme-tertiary border border-theme-secondary rounded-lg p-5">
             <p className="text-xs text-theme-muted uppercase font-semibold mb-3 text-center">Accuracy</p>
             <div className="flex items-center justify-between mb-4">
-              <div className="text-center">
-                <p className="text-xs text-theme-muted mb-1">{leftLabel}</p>
-                <p className="text-2xl font-bold text-green-300 opacity-60">
+              <div className="text-center flex-1">
+                <p className="text-xs text-blue-400 mb-1">{leftLabel}</p>
+                <p className="text-2xl font-bold text-blue-400">
                   {formatPercentage(result.overall.left.avg_accuracy)}
                 </p>
               </div>
@@ -122,8 +219,8 @@ export default function ComparisonView({ result, onClose }: ComparisonViewProps)
                 pct={result.overall.diffs.accuracyPct}
                 metric="accuracy"
               />
-              <div className="text-center">
-                <p className="text-xs text-theme-muted mb-1">{rightLabel}</p>
+              <div className="text-center flex-1">
+                <p className="text-xs text-green-400 mb-1">{rightLabel}</p>
                 <p className="text-2xl font-bold text-green-400">
                   {formatPercentage(result.overall.right.avg_accuracy)}
                 </p>
@@ -149,9 +246,9 @@ export default function ComparisonView({ result, onClose }: ComparisonViewProps)
           <div className="bg-theme-tertiary border border-theme-secondary rounded-lg p-5">
             <p className="text-xs text-theme-muted uppercase font-semibold mb-3 text-center">Avg TTK</p>
             <div className="flex items-center justify-between mb-4">
-              <div className="text-center">
-                <p className="text-xs text-theme-muted mb-1">{leftLabel}</p>
-                <p className="text-2xl font-bold text-orange-300 opacity-60">
+              <div className="text-center flex-1">
+                <p className="text-xs text-blue-400 mb-1">{leftLabel}</p>
+                <p className="text-2xl font-bold text-blue-400">
                   {formatTTK(result.overall.left.avg_ttk)}s
                 </p>
               </div>
@@ -160,9 +257,9 @@ export default function ComparisonView({ result, onClose }: ComparisonViewProps)
                 pct={result.overall.diffs.ttkPct}
                 metric="ttk"
               />
-              <div className="text-center">
-                <p className="text-xs text-theme-muted mb-1">{rightLabel}</p>
-                <p className="text-2xl font-bold text-orange-400">
+              <div className="text-center flex-1">
+                <p className="text-xs text-green-400 mb-1">{rightLabel}</p>
+                <p className="text-2xl font-bold text-green-400">
                   {formatTTK(result.overall.right.avg_ttk)}s
                 </p>
               </div>
@@ -202,63 +299,75 @@ export default function ComparisonView({ result, onClose }: ComparisonViewProps)
                   {/* Score */}
                   <div>
                     <p className="text-xs text-theme-muted mb-2">Score</p>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-blue-300 opacity-60 font-medium text-lg">
-                        {formatNumber(task.left.avgScore)}
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <div className="text-center">
+                        <span className="text-blue-400 font-medium text-lg">
+                          {formatNumber(task.left.avgScore)}
+                        </span>
+                      </div>
                       <span className="text-theme-muted">→</span>
-                      <span className="text-blue-400 font-bold text-lg">
-                        {formatNumber(task.right.avgScore)}
-                      </span>
-                    </div>
-                    <div className={`text-sm font-medium flex items-center gap-1 ${
-                      task.diff.score > 0 ? 'text-green-400' : 
-                      task.diff.score < 0 ? 'text-red-400' : 'text-theme-muted'
-                    }`}>
-                      <span>{task.diff.score > 0 ? '↑' : task.diff.score < 0 ? '↓' : '→'}</span>
-                      <span>{task.diff.score > 0 ? '+' : ''}{formatNumber(task.diff.score)}</span>
+                      <div className="text-center">
+                        <span className="text-green-400 font-bold text-lg">
+                          {formatNumber(task.right.avgScore)}
+                        </span>
+                        <div className={`text-sm font-medium flex items-center justify-center gap-1 mt-1 ${
+                          task.diff.score > 0 ? 'text-lime-400' : 
+                          task.diff.score < 0 ? 'text-red-400' : 'text-theme-muted'
+                        }`}>
+                          <span>{task.diff.score > 0 ? '↑' : task.diff.score < 0 ? '↓' : '→'}</span>
+                          <span>{task.diff.score > 0 ? '+' : ''}{formatNumber(task.diff.score)}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   {/* Accuracy */}
                   <div>
                     <p className="text-xs text-theme-muted mb-2">Accuracy</p>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-green-300 opacity-60 font-medium text-lg">
-                        {formatPercentage(task.left.avgAccuracy)}
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <div className="text-center">
+                        <span className="text-blue-400 font-medium text-lg">
+                          {formatPercentage(task.left.avgAccuracy)}
+                        </span>
+                      </div>
                       <span className="text-theme-muted">→</span>
-                      <span className="text-green-400 font-bold text-lg">
-                        {formatPercentage(task.right.avgAccuracy)}
-                      </span>
-                    </div>
-                    <div className={`text-sm font-medium flex items-center gap-1 ${
-                      task.diff.accuracy > 0 ? 'text-green-400' : 
-                      task.diff.accuracy < 0 ? 'text-red-400' : 'text-theme-muted'
-                    }`}>
-                      <span>{task.diff.accuracy > 0 ? '↑' : task.diff.accuracy < 0 ? '↓' : '→'}</span>
-                      <span>{task.diff.accuracy > 0 ? '+' : ''}{formatPercentage(task.diff.accuracy)}</span>
+                      <div className="text-center">
+                        <span className="text-green-400 font-bold text-lg">
+                          {formatPercentage(task.right.avgAccuracy)}
+                        </span>
+                        <div className={`text-sm font-medium flex items-center justify-center gap-1 mt-1 ${
+                          task.diff.accuracy > 0 ? 'text-lime-400' : 
+                          task.diff.accuracy < 0 ? 'text-red-400' : 'text-theme-muted'
+                        }`}>
+                          <span>{task.diff.accuracy > 0 ? '↑' : task.diff.accuracy < 0 ? '↓' : '→'}</span>
+                          <span>{task.diff.accuracy > 0 ? '+' : ''}{formatPercentage(task.diff.accuracy)}</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   {/* TTK */}
                   <div>
                     <p className="text-xs text-theme-muted mb-2">Avg TTK</p>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-orange-300 opacity-60 font-medium text-lg">
-                        {formatTTK(task.left.avgTtk)}s
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <div className="text-center">
+                        <span className="text-blue-400 font-medium text-lg">
+                          {formatTTK(task.left.avgTtk)}s
+                        </span>
+                      </div>
                       <span className="text-theme-muted">→</span>
-                      <span className="text-orange-400 font-bold text-lg">
-                        {formatTTK(task.right.avgTtk)}s
-                      </span>
-                    </div>
-                    <div className={`text-sm font-medium flex items-center gap-1 ${
-                      task.diff.ttk < 0 ? 'text-green-400' : 
-                      task.diff.ttk > 0 ? 'text-red-400' : 'text-theme-muted'
-                    }`}>
-                      <span>{task.diff.ttk < 0 ? '↓' : task.diff.ttk > 0 ? '↑' : '→'}</span>
-                      <span>{task.diff.ttk > 0 ? '+' : ''}{formatTTK(task.diff.ttk)}s</span>
+                      <div className="text-center">
+                        <span className="text-green-400 font-bold text-lg">
+                          {formatTTK(task.right.avgTtk)}s
+                        </span>
+                        <div className={`text-sm font-medium flex items-center justify-center gap-1 mt-1 ${
+                          task.diff.ttk < 0 ? 'text-lime-400' : 
+                          task.diff.ttk > 0 ? 'text-red-400' : 'text-theme-muted'
+                        }`}>
+                          <span>{task.diff.ttk < 0 ? '↓' : task.diff.ttk > 0 ? '↑' : '→'}</span>
+                          <span>{task.diff.ttk > 0 ? '+' : ''}{formatTTK(task.diff.ttk)}s</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

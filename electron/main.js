@@ -29,24 +29,18 @@ async function showUpdatePrompt(info) {
     }
 
     try {
-        const currentVersion = app.getVersion();
-        const res = await dialog.showMessageBox(mainWindow, {
-            type: 'info',
-            buttons: ['Install and Restart', 'Not Now'],
-            defaultId: 0,
-            cancelId: 1,
-            title: 'Update Available',
-            message: 'A new version of Vantage Stats is available.',
-            detail: `Current: ${currentVersion}   New: ${info.version}\n\nWould you like to download and install it now?`
+        // Extract release notes from info if available
+        const releaseNotes = info.releaseNotes || 'No release notes available.';
+        
+        // Send to renderer for themed UI display
+        mainWindow.webContents.send('update-available', {
+            version: info.version,
+            releaseNotes: typeof releaseNotes === 'string' ? releaseNotes : releaseNotes.join('\n'),
+            releaseName: info.releaseName,
+            releaseDate: info.releaseDate
         });
-
-        if (res.response !== 0) {
-            return;
-        }
-
-        await autoUpdater.downloadUpdate();
     } catch (e) {
-        log.error('Failed to prompt/download update:', e);
+        log.error('Failed to show update prompt:', e);
     }
 }
 
@@ -407,4 +401,16 @@ app.whenReady().then(async () => {
             return { ok: false, reason: 'error' };
         }
     });
+
+    ipcMain.handle('download-update', async () => {
+        try {
+            mainWindow.webContents.send('update-downloading');
+            await autoUpdater.downloadUpdate();
+            return { ok: true };
+        } catch (e) {
+            log.error('Failed to download update:', e);
+            return { ok: false, error: e.message };
+        }
+    });
+
 });

@@ -9,7 +9,7 @@ type ComparisonWizardProps = {
   onComplete: (result: ComparisonResult) => void;
 };
 
-type Step = 'type' | 'windows' | 'review';
+type Step = 'type' | 'windows';
 type CompareType = 'sessions' | 'timeframes' | 'relative';
 
 export default function ComparisonWizard({ onClose, onComplete }: ComparisonWizardProps) {
@@ -133,11 +133,18 @@ export default function ComparisonWizard({ onClose, onComplete }: ComparisonWiza
               </div>
 
               <button
-                onClick={() => setStep('review')}
-                disabled={!leftWindow || !rightWindow}
+                onClick={handleRunComparison}
+                disabled={!leftWindow || !rightWindow || loading}
                 className="w-full px-4 py-2 bg-theme-accent hover:bg-theme-accent/80 disabled:bg-theme-accent/50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
               >
-                Next: Review
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Running...
+                  </span>
+                ) : (
+                  'Run Comparison'
+                )}
               </button>
             </div>
           );
@@ -179,10 +186,18 @@ export default function ComparisonWizard({ onClose, onComplete }: ComparisonWiza
               </div>
 
               <button
-                onClick={() => setStep('review')}
-                className="w-full px-4 py-2 bg-theme-accent hover:bg-theme-accent/80 text-white rounded-lg font-medium transition-colors"
+                onClick={handleRunComparison}
+                disabled={loading}
+                className="w-full px-4 py-2 bg-theme-accent hover:bg-theme-accent/80 disabled:bg-theme-accent/50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
               >
-                Next: Review
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Running...
+                  </span>
+                ) : (
+                  'Run Comparison'
+                )}
               </button>
             </div>
           );
@@ -229,43 +244,23 @@ export default function ComparisonWizard({ onClose, onComplete }: ComparisonWiza
               </div>
 
               <button
-                onClick={() => setStep('review')}
-                className="w-full px-4 py-2 bg-theme-accent hover:bg-theme-accent/80 text-white rounded-lg font-medium transition-colors"
+                onClick={handleRunComparison}
+                disabled={loading}
+                className="w-full px-4 py-2 bg-theme-accent hover:bg-theme-accent/80 disabled:bg-theme-accent/50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
               >
-                Next: Review
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Running...
+                  </span>
+                ) : (
+                  'Run Comparison'
+                )}
               </button>
             </div>
           );
         }
-
-      case 'review':
-        return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-white mb-4">Review & Run</h3>
-            
-            <div className="bg-theme-tertiary border border-theme-secondary rounded-lg p-4">
-              <div>
-                <span className="text-sm text-theme-muted block mb-1">Comparison Type:</span>
-                <span className="text-white font-medium capitalize">{compareType}</span>
-              </div>
-            </div>
-
-            <button
-              onClick={handleRunComparison}
-              disabled={loading}
-              className="w-full px-4 py-3 bg-theme-accent hover:bg-theme-accent/80 disabled:bg-theme-accent/50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition-colors"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Running Comparison...
-                </span>
-              ) : (
-                'Run Comparison'
-              )}
-            </button>
-          </div>
-        );
+        return null;
     }
   };
 
@@ -276,7 +271,7 @@ export default function ComparisonWizard({ onClose, onComplete }: ComparisonWiza
           <div>
             <h2 className="text-2xl font-bold text-white">Create Comparison</h2>
             <p className="text-sm text-theme-muted mt-1">
-              Step {step === 'type' ? '1' : step === 'windows' ? '2' : '3'} of 3
+              Step {step === 'type' ? '1' : '2'} of 2
             </p>
           </div>
           <button

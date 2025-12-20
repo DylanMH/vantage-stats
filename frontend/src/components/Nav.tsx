@@ -19,7 +19,7 @@ export default function Nav() {
             <div className="max-w-[1600px] mx-auto flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     <Link to="/" className="flex items-center gap-2 font-bold tracking-wide text-theme-primary hover:text-theme-accent transition-colors">
-                        <img src="./vs-icon-logo.png" alt="Vantage Stats" className="w-8 h-8" />
+                        <img src="/vs-icon-logo.png" alt="Vantage Stats" className="w-8 h-8" />
                         <span>Vantage Stats</span>
                     </Link>
                     

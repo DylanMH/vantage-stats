@@ -108,6 +108,8 @@ export type ComparisonResult = {
     rightRunCount: number;
     leftTaskCount: number;
     rightTaskCount: number;
+    leftSessionId?: number;
+    rightSessionId?: number;
   };
   labels?: {
     left: string;

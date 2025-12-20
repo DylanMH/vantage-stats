@@ -10,6 +10,7 @@ import { ThemeProvider } from "./contexts/ThemeContext.tsx";
 import { PracticeModeProvider } from "./contexts/PracticeModeContext";
 import { SessionProvider } from "./contexts/SessionContext";
 import GoalNotification from "./components/GoalNotification";
+import UpdateDialog from "./components/UpdateDialog";
 import { useGoalNotifications } from "./hooks/useGoalNotifications";
 import { useRealtimeUpdates } from "./hooks/useRealtimeUpdates";
 
@@ -52,6 +53,9 @@ function AppContent() {
           </div>
         ))}
       </div>
+
+      {/* Update Dialog */}
+      <UpdateDialog />
     </div>
   );
 }

@@ -45,37 +45,40 @@ module.exports = (db) => {
             // Handle session-based windows
             let leftDef = left;
             let rightDef = right;
+            let leftSession = null;
+            let rightSession = null;
 
             if (left.type === 'session' && left.sessionId) {
-                const session = await db.get('SELECT * FROM sessions WHERE id = ?', [left.sessionId]);
-                if (!session) {
+                leftSession = await db.get('SELECT * FROM sessions WHERE id = ?', [left.sessionId]);
+                if (!leftSession) {
                     return res.status(404).json({ error: `Session ${left.sessionId} not found` });
                 }
                 leftDef = {
-                    startTime: session.started_at,
-                    endTime: session.ended_at || new Date().toISOString()
+                    startTime: leftSession.started_at,
+                    endTime: leftSession.ended_at || new Date().toISOString()
                 };
             }
 
             if (right.type === 'session' && right.sessionId) {
-                const session = await db.get('SELECT * FROM sessions WHERE id = ?', [right.sessionId]);
-                if (!session) {
+                rightSession = await db.get('SELECT * FROM sessions WHERE id = ?', [right.sessionId]);
+                if (!rightSession) {
                     return res.status(404).json({ error: `Session ${right.sessionId} not found` });
                 }
                 rightDef = {
-                    startTime: session.started_at,
-                    endTime: session.ended_at || new Date().toISOString()
+                    startTime: rightSession.started_at,
+                    endTime: rightSession.ended_at || new Date().toISOString()
                 };
             }
 
             const leftWindow = resolveWindow(leftDef);
             const rightWindow = resolveWindow(rightDef);
 
-            const leftLabel = left.sessionId 
-                ? `Session ${left.sessionId}` 
+            // Generate labels - use session name if available
+            const leftLabel = leftSession 
+                ? (leftSession.name || `Session ${left.sessionId}`) 
                 : getWindowLabel(left);
-            const rightLabel = right.sessionId 
-                ? `Session ${right.sessionId}` 
+            const rightLabel = rightSession 
+                ? (rightSession.name || `Session ${right.sessionId}`) 
                 : getWindowLabel(right);
 
             let taskIds;
@@ -122,12 +125,30 @@ module.exports = (db) => {
                     const rightShared = await aggregateRuns(db, { ...rightWindow, taskIds: sharedIds });
                     const comparison = compareAggregations(leftShared, rightShared);
                     comparison.labels = { left: leftLabel, right: rightLabel };
+                    
+                    // Add session IDs to meta if this is a session comparison
+                    if (leftSession) {
+                        comparison.meta.leftSessionId = left.sessionId;
+                    }
+                    if (rightSession) {
+                        comparison.meta.rightSessionId = right.sessionId;
+                    }
+                    
                     return res.json(comparison);
                 }
             }
 
             const comparison = compareAggregations(leftData, rightData);
             comparison.labels = { left: leftLabel, right: rightLabel };
+            
+            // Add session IDs to meta if this is a session comparison
+            if (leftSession) {
+                comparison.meta.leftSessionId = left.sessionId;
+            }
+            if (rightSession) {
+                comparison.meta.rightSessionId = right.sessionId;
+            }
+            
             res.json(comparison);
         } catch (e) {
             console.error('Error running comparison:', e);

@@ -2,6 +2,43 @@
 
 All notable changes to Vantage Stats will be documented in this file.
 
+## [1.3.2] - 2025-12-20
+
+### 🎨 UI/UX Improvements
+
+#### **Comparison View Enhancements**
+
+- **Consistent Color Coding**: Overhauled comparison UI with clear visual distinction
+  - Blue text/borders for left session throughout all cards
+  - Green text/borders for right session throughout all cards
+  - Lime-green for improvement indicators (better contrast with session colors)
+  - Red for decline indicators
+  - Removed opacity/fading from left session values for better readability
+
+- **Improved Layout & Clarity**:
+  - Overall Performance cards: Diff indicators positioned in center between values
+  - Task-Specific Breakdown: Diff indicators aligned under right session value for clarity
+  - Removed colored dots from session labels for cleaner look
+  - Enhanced session dropdown spacing with better padding and visual breathing room
+  - Larger, more readable dropdowns with improved color-coded borders
+
+### 🐛 Bug Fixes
+
+#### **Session Comparison Switcher**
+
+- Fixed 500 error when switching between sessions in comparison view
+- Issue: Missing session IDs in comparison metadata for shared task path
+- Solution: Added session ID assignment to early return path in comparisons endpoint
+- Session dropdowns now work smoothly without errors
+
+#### **Electron IPC & TypeScript Configuration**
+
+- Fixed "An object could not be cloned" IPC error on app launch
+- Removed problematic `executeJavaScript` injection causing circular references
+- Updated frontend to use direct `require('electron')` with proper try-catch handling
+- Installed `@types/node` and updated tsconfig for proper Node.js type definitions
+- Resolved TypeScript errors for `require()` in Electron context
+
 ## [1.3.1] - 2025-12-20
 
 ### 🐛 Bug Fixes
