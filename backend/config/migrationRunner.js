@@ -1,6 +1,7 @@
-// backend/migrationRunner.js
+// backend/config/migrationRunner.js
 const fs = require('fs');
 const path = require('path');
+const { initDb } = require('./database');
 
 /**
  * Migration runner with tracking
@@ -9,7 +10,7 @@ const path = require('path');
  */
 async function runMigrations(db) {
   try {
-    const migrationsDir = path.join(__dirname, 'migrations');
+    const migrationsDir = path.join(__dirname, '../migrations');
     
     // Create migrations directory if it doesn't exist
     if (!fs.existsSync(migrationsDir)) {

@@ -1,18 +1,9 @@
-// backend/server.js
+// backend/config/server.js
 // Main Express API server for Vantage Stats
 const express = require('express');
 const path = require('path');
-const events = require('./events');
-const goals = require('./goals');
-
-/**
- * Get ISO timestamp for X days ago
- */
-function daysAgoIso(days) {
-    const d = new Date();
-    d.setDate(d.getDate() - days);
-    return d.toISOString();
-}
+const events = require('../utils/events');
+const goals = require('../core/goals/goals');
 
 // ===========================================
 // SSE (Server-Sent Events) for real-time updates
@@ -133,17 +124,17 @@ function startServer(db, port = 3000) {
     // MOUNT ROUTE MODULES
     // ===========================================
     
-    const runsRoutes = require('./routes/runs')(db);
-    const statsRoutes = require('./routes/stats')(db);
-    const tasksRoutes = require('./routes/tasks')(db);
-    const practiceRoutes = require('./routes/practice')(db);
-    const goalsRoutes = require('./routes/goals')(db);
-    const sessionsRoutes = require('./routes/sessions')(db);
-    const packsRoutes = require('./routes/packs')(db);
-    const settingsRoutes = require('./routes/settings')(db);
-    const userRoutes = require('./routes/user')(db);
-    const summaryRoutes = require('./routes/summary')(db);
-    const comparisonsRoutes = require('./routes/comparisons')(db);
+    const runsRoutes = require('../routes/runs')(db);
+    const statsRoutes = require('../routes/stats')(db);
+    const tasksRoutes = require('../routes/tasks')(db);
+    const practiceRoutes = require('../routes/practice')(db);
+    const goalsRoutes = require('../routes/goals')(db);
+    const sessionsRoutes = require('../routes/sessions')(db);
+    const packsRoutes = require('../routes/packs')(db);
+    const settingsRoutes = require('../routes/settings')(db);
+    const userRoutes = require('../routes/user')(db);
+    const summaryRoutes = require('../routes/summary')(db);
+    const comparisonsRoutes = require('../routes/comparisons')(db);
 
     app.use('/api/runs', runsRoutes);
     app.use('/api/stats', statsRoutes);

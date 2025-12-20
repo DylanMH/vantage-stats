@@ -32,6 +32,16 @@ export function SessionProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetchActiveSession();
+    
+    const handleDataUpdate = () => {
+      fetchActiveSession();
+    };
+    
+    window.addEventListener('data-updated', handleDataUpdate);
+    
+    return () => {
+      window.removeEventListener('data-updated', handleDataUpdate);
+    };
   }, [fetchActiveSession]);
 
   const startSession = async (name?: string) => {

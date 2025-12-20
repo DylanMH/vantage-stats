@@ -1,12 +1,7 @@
 // backend/routes/runs.js
 const express = require('express');
 const router = express.Router();
-
-function daysAgoIso(days) {
-    const d = new Date();
-    d.setDate(d.getDate() - days);
-    return d.toISOString();
-}
+const { daysAgoIso } = require('../utils/time');
 
 module.exports = (db) => {
     // Get runs with optional filters (task, days, limit)
@@ -114,7 +109,7 @@ module.exports = (db) => {
 
     // Backfill duration for runs
     router.post('/backfill-duration', async (req, res) => {
-        const { parseCsvToRun } = require('../csvParser');
+        const { parseCsvToRun } = require('../core/data-import/csvParser');
         const fs = require('fs');
         
         try {

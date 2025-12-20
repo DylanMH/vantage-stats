@@ -1,13 +1,14 @@
 // backend/routes/sessions.js
 const express = require('express');
 const router = express.Router();
+const { toLocalISOString } = require('../utils/time');
 
 module.exports = (db) => {
     // Start a new training session
     router.post('/start', async (req, res) => {
         try {
             const { name, notes } = req.body;
-            const startedAt = new Date().toISOString();
+            const startedAt = toLocalISOString(new Date());
 
             const existing = await db.get('SELECT id FROM sessions WHERE is_active = 1');
             if (existing) {
@@ -15,7 +16,7 @@ module.exports = (db) => {
             }
 
             // Check if practice mode is active
-            const { getSettingBoolean } = require('../settings');
+            const { getSettingBoolean } = require('../services/settings');
             const isPracticeMode = await getSettingBoolean(db, 'practice_mode_active', false);
 
             const result = await db.run(`
@@ -40,7 +41,7 @@ module.exports = (db) => {
     router.post('/:id/end', async (req, res) => {
         try {
             const { id } = req.params;
-            const endedAt = new Date().toISOString();
+            const endedAt = toLocalISOString(new Date());
 
             const session = await db.get('SELECT * FROM sessions WHERE id = ? AND is_active = 1', [id]);
             if (!session) {
@@ -139,7 +140,7 @@ module.exports = (db) => {
                 return res.status(404).json({ error: 'Session not found' });
             }
 
-            const endTime = session.ended_at || new Date().toISOString();
+            const endTime = session.ended_at || toLocalISOString(new Date());
             const isPractice = session.is_practice || 0;
             
             const runs = await db.all(`

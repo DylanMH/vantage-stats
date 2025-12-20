@@ -1,12 +1,7 @@
 // backend/routes/practice.js
 const express = require('express');
 const router = express.Router();
-
-function daysAgoIso(days) {
-    const d = new Date();
-    d.setDate(d.getDate() - days);
-    return d.toISOString();
-}
+const { daysAgoIso } = require('../utils/time');
 
 module.exports = (db) => {
     /**
@@ -14,7 +9,7 @@ module.exports = (db) => {
      */
     router.get('/status', async (_req, res) => {
         try {
-            const { getSetting } = require('../settings');
+            const { getSetting } = require('../services/settings');
             const isPracticeMode = await getSetting(db, 'practice_mode_active', 'false');
             res.json({ isPracticeMode: isPracticeMode === 'true' || isPracticeMode === '1' });
         } catch (e) {

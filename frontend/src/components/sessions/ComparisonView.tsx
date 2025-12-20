@@ -1,8 +1,4 @@
-import { useState } from "react";
-import type { ComparisonResult, Session } from "../../types/sessions";
-import { useQuery } from "../../hooks/useApi";
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import type { ComparisonResult } from "../../types/sessions";
 
 type ComparisonViewProps = {
   result: ComparisonResult;
@@ -10,41 +6,7 @@ type ComparisonViewProps = {
   onRecompare?: (result: ComparisonResult) => void;
 };
 
-export default function ComparisonView({ result, onClose, onRecompare }: ComparisonViewProps) {
-  const [loading, setLoading] = useState(false);
-  const { data: sessions } = useQuery<Session[]>('sessions', '/api/sessions');
-  const completedSessions = sessions?.filter(s => s.is_active === 0) || [];
-  
-  // Extract session IDs if this is a session comparison
-  const isSessionComparison = result.meta.leftSessionId && result.meta.rightSessionId;
-  const [leftSessionId, setLeftSessionId] = useState(result.meta.leftSessionId || 0);
-  const [rightSessionId, setRightSessionId] = useState(result.meta.rightSessionId || 0);
-
-  const handleSessionChange = async () => {
-    if (!onRecompare || !isSessionComparison) return;
-    
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/api/comparisons/run`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          left: { type: 'session', sessionId: leftSessionId },
-          right: { type: 'session', sessionId: rightSessionId },
-          taskScope: 'all'
-        })
-      });
-
-      if (!response.ok) throw new Error('Failed to run comparison');
-      const newResult = await response.json();
-      onRecompare(newResult);
-    } catch (error) {
-      console.error('Error running comparison:', error);
-      alert('Failed to run comparison');
-    } finally {
-      setLoading(false);
-    }
-  };
+export default function ComparisonView({ result, onClose }: ComparisonViewProps) {
   const formatNumber = (num: number | null) => {
     if (num === null || num === undefined) return '—';
     return num.toLocaleString(undefined, { maximumFractionDigits: 2 });
@@ -93,70 +55,23 @@ export default function ComparisonView({ result, onClose, onRecompare }: Compari
         <div className="flex-1">
           <h2 className="text-2xl font-bold text-white mb-3">Comparison Results</h2>
           
-          {/* Session Switcher - only show for session comparisons */}
-          {isSessionComparison && onRecompare ? (
-            <div className="flex items-center gap-4 py-2">
-              <div className="flex items-center gap-3 flex-1">
-                <div className="w-1 h-10 bg-blue-400 rounded" />
-                <select
-                  value={leftSessionId}
-                  onChange={(e) => setLeftSessionId(parseInt(e.target.value))}
-                  className="flex-1 px-4 py-2.5 bg-theme-tertiary border-2 border-blue-400/50 rounded text-white text-sm focus:border-blue-400 focus:outline-none"
-                >
-                  {completedSessions.map((session) => (
-                    <option key={session.id} value={session.id}>
-                      {session.is_practice === 1 ? '🎯 ' : ''}{session.name || `Session ${session.id}`} - {new Date(session.started_at).toLocaleDateString()}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              
-              <span className="text-theme-muted font-bold text-lg px-2">vs</span>
-              
-              <div className="flex items-center gap-3 flex-1">
-                <select
-                  value={rightSessionId}
-                  onChange={(e) => setRightSessionId(parseInt(e.target.value))}
-                  className="flex-1 px-4 py-2.5 bg-theme-tertiary border-2 border-green-400/50 rounded text-white text-sm focus:border-green-400 focus:outline-none"
-                >
-                  {completedSessions.map((session) => (
-                    <option key={session.id} value={session.id}>
-                      {session.is_practice === 1 ? '🎯 ' : ''}{session.name || `Session ${session.id}`} - {new Date(session.started_at).toLocaleDateString()}
-                    </option>
-                  ))}
-                </select>
-                <div className="w-1 h-10 bg-green-400 rounded" />
-              </div>
-              
-              {(leftSessionId !== result.meta.leftSessionId || rightSessionId !== result.meta.rightSessionId) && (
-                <button
-                  onClick={handleSessionChange}
-                  disabled={loading}
-                  className="px-5 py-2.5 bg-theme-accent hover:bg-theme-accent/80 disabled:bg-theme-accent/50 disabled:cursor-not-allowed text-white text-sm rounded font-medium transition-colors whitespace-nowrap"
-                >
-                  {loading ? '...' : 'Compare'}
-                </button>
-              )}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-1 h-6 bg-blue-400 rounded" />
+              <span className="text-blue-400 font-semibold">{leftLabel}</span>
+              <span className="text-theme-muted text-sm">({result.meta.leftRunCount} runs)</span>
             </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-6 bg-blue-400 rounded" />
-                <span className="text-blue-400 font-semibold">{leftLabel}</span>
-                <span className="text-theme-muted text-sm">({result.meta.leftRunCount} runs)</span>
-              </div>
-              <span className="text-theme-muted">vs</span>
-              <div className="flex items-center gap-2">
-                <span className="text-green-400 font-semibold">{rightLabel}</span>
-                <div className="w-1 h-6 bg-green-400 rounded" />
-                <span className="text-theme-muted text-sm">({result.meta.rightRunCount} runs)</span>
-              </div>
+            <span className="text-theme-muted">vs</span>
+            <div className="flex items-center gap-2">
+              <span className="text-green-400 font-semibold">{rightLabel}</span>
+              <div className="w-1 h-6 bg-green-400 rounded" />
+              <span className="text-theme-muted text-sm">({result.meta.rightRunCount} runs)</span>
             </div>
-          )}
+          </div>
         </div>
         <button
           onClick={onClose}
-          className="px-4 py-2 bg-theme-tertiary hover:bg-theme-primary border border-theme-primary rounded-lg text-white transition-colors"
+          className="ml-6 px-4 py-2 bg-theme-tertiary hover:bg-theme-primary border border-theme-primary rounded-lg text-white transition-colors flex-shrink-0"
         >
           Close
         </button>

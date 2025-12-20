@@ -1,12 +1,7 @@
 // backend/routes/stats.js
 const express = require('express');
 const router = express.Router();
-
-function daysAgoIso(days) {
-    const d = new Date();
-    d.setDate(d.getDate() - days);
-    return d.toISOString();
-}
+const { daysAgoIso } = require('../utils/time');
 
 module.exports = (db) => {
     // Get global statistics with optional filtering

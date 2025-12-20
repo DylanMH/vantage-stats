@@ -1,5 +1,5 @@
-// backend/goals.js
-const { getSettingBoolean } = require('./settings');
+// backend/core/goals/goals.js
+const { getSettingBoolean } = require('../../services/settings');
 
 const goals = {
   // Generate simple overall performance goals (not task-specific)

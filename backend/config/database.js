@@ -1,4 +1,4 @@
-// backend/db.js
+// backend/config/database.js
 const sqlite3 = require('sqlite3').verbose();
 const fs = require('fs');
 const path = require('path');

@@ -1,5 +1,6 @@
 // backend/routes/packs.js
 const express = require('express');
+const packs = require('../services/packs');
 const router = express.Router();
 
 module.exports = (db) => {

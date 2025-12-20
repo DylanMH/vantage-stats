@@ -3,8 +3,8 @@ const express = require('express');
 const router = express.Router();
 
 module.exports = (db) => {
-    const settings = require('../settings');
-    const { scanAllCsvs } = require('../watcher');
+    const { getSetting, setSetting } = require('../services/settings');
+    const { scanAllCsvs } = require('../core/data-import/watcher');
 
     // Get all application settings
     router.get('/', async (_req, res) => {
@@ -12,12 +12,12 @@ module.exports = (db) => {
             let user = await db.get(`SELECT username FROM users WHERE id = 1`);
             const username = user?.username || 'Player';
             
-            const statsFolder = await settings.getSetting(db, 'stats_folder', '');
-            const playlistsFolder = await settings.getSetting(db, 'playlists_folder', '');
-            const theme = await settings.getSetting(db, 'theme', 'default');
-            const autoGoals = await settings.getSettingBoolean(db, 'auto_goals', true);
-            const notifications = await settings.getSettingBoolean(db, 'notifications', true);
-            const darkMode = await settings.getSettingBoolean(db, 'dark_mode', true);
+            const statsFolder = await getSetting(db, 'stats_folder', '');
+            const playlistsFolder = await getSetting(db, 'playlists_folder', '');
+            const theme = await getSetting(db, 'theme', 'default');
+            const autoGoals = await getSetting(db, 'auto_goals', 'true') === 'true';
+            const notifications = await getSetting(db, 'notifications', 'true') === 'true';
+            const darkMode = await getSetting(db, 'dark_mode', 'true') === 'true';
             
             res.json({
                 username,
@@ -46,22 +46,22 @@ module.exports = (db) => {
                 `, [username, username]);
             }
             if (statsFolder !== undefined) {
-                await settings.setSetting(db, 'stats_folder', statsFolder);
+                await setSetting(db, 'stats_folder', statsFolder);
             }
             if (playlistsFolder !== undefined) {
-                await settings.setSetting(db, 'playlists_folder', playlistsFolder);
+                await setSetting(db, 'playlists_folder', playlistsFolder);
             }
             if (theme !== undefined) {
-                await settings.setSetting(db, 'theme', theme);
+                await setSetting(db, 'theme', theme);
             }
             if (autoGoals !== undefined) {
-                await settings.setSetting(db, 'auto_goals', autoGoals ? 'true' : 'false');
+                await setSetting(db, 'auto_goals', autoGoals ? 'true' : 'false');
             }
             if (notifications !== undefined) {
-                await settings.setSetting(db, 'notifications', notifications ? 'true' : 'false');
+                await setSetting(db, 'notifications', notifications ? 'true' : 'false');
             }
             if (darkMode !== undefined) {
-                await settings.setSetting(db, 'dark_mode', darkMode ? 'true' : 'false');
+                await setSetting(db, 'dark_mode', darkMode ? 'true' : 'false');
             }
             
             res.json({ success: true });
@@ -90,7 +90,7 @@ module.exports = (db) => {
     // Rescan stats folder
     router.post('/rescan', async (_req, res) => {
         try {
-            const statsFolder = await settings.getSetting(db, 'stats_folder', '');
+            const statsFolder = await getSetting(db, 'stats_folder', '');
             
             if (!statsFolder) {
                 return res.status(400).json({ error: 'Stats folder not configured' });

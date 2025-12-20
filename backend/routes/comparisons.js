@@ -3,7 +3,7 @@ const express = require('express');
 const router = express.Router();
 
 module.exports = (db) => {
-    const { aggregateRuns, getTopRunsForTask, compareAggregations, resolveWindow } = require('../aggregator');
+    const { aggregateRuns, compareAggregations, resolveWindow } = require('../core/aggregation/aggregator');
 
     function getWindowLabel(windowDef) {
         if (typeof windowDef === 'string') {

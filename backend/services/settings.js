@@ -1,4 +1,4 @@
-// backend/settings.js
+// backend/services/settings.js
 // Helper functions for managing app settings
 
 async function getSetting(db, key, defaultValue = null) {

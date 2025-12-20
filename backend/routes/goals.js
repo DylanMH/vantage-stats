@@ -1,7 +1,7 @@
 // backend/routes/goals.js
 const express = require('express');
 const router = express.Router();
-const goals = require('../goals');
+const goals = require('../core/goals/goals');
 
 module.exports = (db) => {
     // Get goals with optional filtering

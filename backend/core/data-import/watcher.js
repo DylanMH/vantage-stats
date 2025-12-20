@@ -1,22 +1,14 @@
-// backend/watcher.js
+// backend/core/data-import/watcher.js
 const chokidar = require('chokidar');
 const fs = require('fs/promises');
 const fsSync = require('fs');
 const path = require('path');
-const crypto = require('crypto');
 const { parseCsvToRun } = require('./csvParser');
-const goals = require('./goals');
-const { getSetting, setSetting, getSettingBoolean } = require('./settings');
-const events = require('./events');
-
-function sha1(buf) {
-    return crypto.createHash('sha1').update(buf).digest('hex');
-}
-
-async function hashFile(file) {
-    const buf = await fs.readFile(file);
-    return sha1(buf);
-}
+const { toLocalISOString } = require('../../utils/time');
+const { hashFile } = require('../../utils/hash');
+const goals = require('../goals/goals');
+const { getSetting, setSetting, getSettingBoolean } = require('../../services/settings');
+const events = require('../../utils/events');
 
 function deriveMetrics(parsed) {
     const out = { ...parsed };
@@ -61,8 +53,18 @@ async function upsertRun(db, file) {
     // content hash (robust dedupe)
     const hash = await hashFile(file);
 
-    // Check if practice mode is active
-    const isPracticeMode = await getSettingBoolean(db, 'practice_mode_active', false);
+    // Check if there's an active session - if so, use its practice mode flag
+    // This ensures runs always match the session they're supposed to be part of
+    const activeSession = await db.get('SELECT is_practice FROM sessions WHERE is_active = 1');
+    let isPracticeMode;
+    
+    if (activeSession) {
+        // Use the session's practice mode to ensure runs are tracked correctly
+        isPracticeMode = activeSession.is_practice === 1;
+    } else {
+        // No active session, use global practice mode setting
+        isPracticeMode = await getSettingBoolean(db, 'practice_mode_active', false);
+    }
 
     // insert-or-ignore by unique hash
     const wasInserted = await db.run(
@@ -75,7 +77,7 @@ async function upsertRun(db, file) {
             hash,
             path.basename(file),
             file,
-            parsed.played_at || new Date().toISOString(),
+            parsed.played_at || toLocalISOString(new Date()),
             parsed.score ?? null,
             parsed.accuracy ?? null,
             parsed.hits ?? null,
@@ -106,7 +108,7 @@ async function upsertRun(db, file) {
                 accuracy: parsed.accuracy,
                 score: parsed.score,
                 duration: parsed.duration,
-                played_at: parsed.played_at || new Date().toISOString()
+                played_at: parsed.played_at || toLocalISOString(new Date())
             };
             
             await goals.updateGoalProgress(db, runData);

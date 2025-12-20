@@ -4,11 +4,14 @@ import SessionsList from "../components/sessions/SessionsList";
 import QuickPresets from "../components/sessions/QuickPresets";
 import ComparisonView from "../components/sessions/ComparisonView";
 import ComparisonWizard from "../components/sessions/ComparisonWizard";
+import SessionComparisonSelector from "../components/sessions/SessionComparisonSelector";
+import QuickComparisonModal from "../components/sessions/QuickComparisonModal";
 import type { ComparisonResult } from "../types/sessions";
 
 export default function Sessions() {
   const [comparisonResult, setComparisonResult] = useState<ComparisonResult | null>(null);
   const [showWizard, setShowWizard] = useState(false);
+  const [quickCompareSessionId, setQuickCompareSessionId] = useState<number | null>(null);
   const [sessionsKey, setSessionsKey] = useState(0); // Key to force SessionsList refresh
 
   const handleComparisonRun = (result: ComparisonResult) => {
@@ -36,6 +39,9 @@ export default function Sessions() {
       {/* Session Control */}
       <SessionControl onSessionEnd={handleSessionEnd} />
 
+      {/* Persistent Session Comparison Selector */}
+      <SessionComparisonSelector onComparisonComplete={handleComparisonRun} />
+
       {/* Quick Presets */}
       <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <div className="flex items-center justify-between mb-4">
@@ -62,17 +68,22 @@ export default function Sessions() {
       {/* Recent Sessions */}
       <SessionsList 
         key={sessionsKey}
-        onCompare={() => {
-          // Pre-fill wizard with selected session
-          // TODO: Pass session ID to wizard for pre-filling
-          setShowWizard(true);
-        }} 
+        onCompare={(sessionId) => setQuickCompareSessionId(sessionId)} 
       />
 
       {/* Comparison Wizard Modal */}
       {showWizard && (
         <ComparisonWizard
           onClose={() => setShowWizard(false)}
+          onComplete={handleComparisonRun}
+        />
+      )}
+
+      {/* Quick Comparison Modal */}
+      {quickCompareSessionId && (
+        <QuickComparisonModal
+          initialSessionId={quickCompareSessionId}
+          onClose={() => setQuickCompareSessionId(null)}
           onComplete={handleComparisonRun}
         />
       )}

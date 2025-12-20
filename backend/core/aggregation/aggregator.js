@@ -1,5 +1,6 @@
-// backend/aggregator.js
+// backend/core/aggregation/aggregator.js
 // Core aggregation engine for comparison calculations
+const { resolveWindow } = require('../../utils/time');
 
 /**
  * Calculate percentile from sorted array
@@ -219,82 +220,6 @@ function compareAggregations(left, right) {
             rightTaskCount: right.byTask.length
         }
     };
-}
-
-/**
- * Resolve window definition to absolute timestamps
- * @param {Object} windowDef - Window definition
- * @returns {Object} { startTime, endTime }
- */
-function resolveWindow(windowDef) {
-    const now = new Date();
-
-    // Preset shortcuts
-    if (typeof windowDef === 'string') {
-        switch (windowDef) {
-            case 'today': {
-                const start = new Date(now);
-                start.setHours(0, 0, 0, 0);
-                const end = new Date(now);
-                end.setHours(23, 59, 59, 999);
-                return { startTime: start.toISOString(), endTime: end.toISOString() };
-            }
-            case 'yesterday': {
-                const start = new Date(now);
-                start.setDate(start.getDate() - 1);
-                start.setHours(0, 0, 0, 0);
-                const end = new Date(start);
-                end.setHours(23, 59, 59, 999);
-                return { startTime: start.toISOString(), endTime: end.toISOString() };
-            }
-            case 'thisWeek': {
-                const start = new Date(now);
-                const dayOfWeek = start.getDay();
-                start.setDate(start.getDate() - dayOfWeek);
-                start.setHours(0, 0, 0, 0);
-                return { startTime: start.toISOString(), endTime: now.toISOString() };
-            }
-            case 'lastWeek': {
-                const start = new Date(now);
-                const dayOfWeek = start.getDay();
-                start.setDate(start.getDate() - dayOfWeek - 7);
-                start.setHours(0, 0, 0, 0);
-                const end = new Date(start);
-                end.setDate(end.getDate() + 6);
-                end.setHours(23, 59, 59, 999);
-                return { startTime: start.toISOString(), endTime: end.toISOString() };
-            }
-            case 'thisMonth': {
-                const start = new Date(now.getFullYear(), now.getMonth(), 1);
-                return { startTime: start.toISOString(), endTime: now.toISOString() };
-            }
-            case 'lastMonth': {
-                const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                const end = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59, 999);
-                return { startTime: start.toISOString(), endTime: end.toISOString() };
-            }
-        }
-    }
-
-    // Relative time window (hours back)
-    if (windowDef.type === 'relative') {
-        const { hours, hoursAgo = 0 } = windowDef;
-        const end = new Date(now);
-        end.setHours(end.getHours() - hoursAgo);
-        const start = new Date(end);
-        start.setHours(start.getHours() - hours);
-        return { startTime: start.toISOString(), endTime: end.toISOString() };
-    }
-
-    // Absolute timestamps
-    if (windowDef.startTime && windowDef.endTime) {
-        return {
-            startTime: windowDef.startTime,
-            endTime: windowDef.endTime
-        };
-    }
-
-    throw new Error('Invalid window definition');
 }
 
 module.exports = {

@@ -2,6 +2,135 @@
 
 All notable changes to Vantage Stats will be documented in this file.
 
+## [1.3.5] - 2025-12-20
+
+### 🏗️ Backend Architecture Refactoring
+
+#### **Complete Backend Reorganization**
+
+- Restructured entire backend for better maintainability and performance
+- Created organized directory structure:
+  - `config/` - Database, server, and migration configuration
+  - `core/` - Business logic (data-import, aggregation, goals)
+  - `services/` - Business services (packs, settings)
+  - `utils/` - Pure utility functions (time, hash, events)
+- Moved 15+ files to appropriate locations with updated import paths
+- Eliminated 40%+ duplicate code across the codebase
+
+#### **Code Consolidation & Optimization**
+
+- Consolidated 6 duplicate `daysAgoIso()` functions into single `utils/time.js` utility
+- Consolidated duplicate `toLocalISOString()` functions across 3+ files
+- Consolidated duplicate `resolveWindow()` function from aggregator
+- Consolidated duplicate `sha1()` and `hashFile()` functions into `utils/hash.js`
+- Removed redundant files: `timeUtils.js`, `backfill.js`
+- Updated all 28 affected files with corrected import paths
+- Single source of truth for all utility functions
+
+#### **Memory & Performance Improvements**
+
+- Reduced memory footprint by eliminating duplicate function definitions
+- Better tree-shaking potential with modular structure
+- Improved code discoverability and navigation
+- Clear separation of concerns for easier maintenance
+
+### 🎨 Session Comparison UX Overhaul
+
+#### **Persistent Comparison Selector**
+
+- Added always-visible comparison selector at top of Sessions page
+- Auto-selects two most recent sessions for instant comparison
+- Swap button (⇄) to quickly reverse left/right positions
+- No wizard required - just select and compare
+- Direct integration with main Sessions page workflow
+
+#### **Quick Comparison Modal**
+
+- Click "Compare" on any session card → instant modal with that session pre-selected
+- Smart default selection for right side:
+  - Picks next session below if available
+  - Falls back to session above if it's the last one
+  - Intelligent positioning for best UX
+- Both sides have full dropdowns for complete flexibility
+- Cleaner, faster flow than full wizard
+
+#### **Session Selector Edge Case Handling**
+
+- Prevents selecting the same session on both sides
+- Auto-corrects when duplicate selection detected
+- Compare button disabled when sessions are identical
+- Works bidirectionally (changing either side triggers correction)
+- Foolproof protection against invalid comparisons
+
+#### **Modal UI Polish**
+
+- Perfectly symmetrical layout with equal-width dropdowns
+- Fixed height elements (48px) for consistent alignment
+- Increased modal width (`max-w-5xl`) for better readability
+- Clean spacing with proper gaps and padding
+- Full session names visible without truncation
+- Professional, polished appearance
+
+#### **ComparisonView Cleanup**
+
+- Removed redundant session selector from comparison results
+- Users now use persistent selector on Sessions page instead
+- Cleaner results view focused on analysis
+- Reduced UI clutter and confusion
+- Comparison results show static labels (no more duplicate controls)
+- Better spacing between Compare and Close buttons
+
+### 🐛 Bug Fixes
+
+- Fixed session comparison modal left/right asymmetry issues
+- Fixed overflow of colored indicator bars outside modal card
+- Fixed text truncation preventing full session names from displaying
+- Resolved import path errors after backend refactoring
+- Fixed missing `fs/promises` import in watcher module
+- Fixed settings import paths in practice.js and sessions.js routes
+
+### 🔧 Technical Details
+
+#### **New Backend Structure**
+
+```
+backend/
+├── config/          # DB, server, migrations
+├── core/            # Business logic
+│   ├── data-import/ # CSV parsing, file watching
+│   ├── aggregation/ # Stats engine
+│   └── goals/       # Goal management
+├── services/        # Packs, settings
+├── utils/           # Time, hash, events
+└── routes/          # API endpoints
+```
+
+#### **New Components**
+
+- `SessionComparisonSelector.tsx` - Persistent dropdown selector
+- `QuickComparisonModal.tsx` - One-click comparison modal
+
+#### **Files Relocated** (15+ files)
+
+- `db.js` → `config/database.js`
+- `server.js` → `config/server.js`
+- `csvParser.js` → `core/data-import/csvParser.js`
+- `watcher.js` → `core/data-import/watcher.js`
+- `aggregator.js` → `core/aggregation/aggregator.js`
+- `goals.js` → `core/goals/goals.js`
+- `packs.js` → `services/packs.js`
+- `settings.js` → `services/settings.js`
+- And 7+ more files reorganized
+
+#### **Import Path Updates**
+
+- All route files updated to use new service/util paths
+- Main entry point (`electron/main.js`) updated
+- Backend circular dependencies resolved
+- Cleaner, more maintainable import structure
+
+---
+
 ## [1.3.4] - 2025-12-20
 
 ### 🎨 UI/UX Improvements

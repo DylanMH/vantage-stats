@@ -1,4 +1,4 @@
-// backend/packs.js
+// backend/services/packs.js
 const packs = {
   // Initialize default packs for popular games
   async initializeDefaultPacks(db) {

@@ -1,4 +1,5 @@
 // Script to clean up all goals and regenerate fresh ones
+// backend/core/goals/cleanup.js
 const sqlite3 = require('sqlite3').verbose();
 const { promisify } = require('util');
 
