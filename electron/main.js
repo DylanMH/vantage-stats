@@ -162,10 +162,11 @@ function createWindow(showSetup = false) {
     const iconPath = path.join(__dirname, '../assets/vs-icon-logo.png');
 
     mainWindow = new BrowserWindow({
-        width: 1200,
-        height: 800,
+        width: 1920,
+        height: 1080,
         minWidth: 800,
         minHeight: 600,
+        title: 'Vantage Stats',
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,

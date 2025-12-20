@@ -7,7 +7,8 @@ export type Session = {
   notes: string | null;
   started_at: string;
   ended_at: string | null;
-  is_active: boolean;
+  is_active: number; // 0 or 1 (SQLite boolean)
+  is_practice: number; // 0 or 1
   total_runs: number;
   total_duration: number;
   created_at: string;

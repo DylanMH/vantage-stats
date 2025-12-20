@@ -93,17 +93,48 @@
   box-sizing: border-box;
 }
 html,
-body,
-#root {
-  height: 100%;
-}
 body {
   margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+body {
   background: var(--bg);
   color: var(--text);
   font: 14px/1.5 ui-sans-serif, system-ui, Segoe UI, Roboto, Ubuntu;
   background-image: var(--glow1), var(--glow2);
   background-repeat: no-repeat;
+}
+
+/* Custom themed scrollbar */
+::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--color-bg-primary);
+  border-left: 1px solid var(--color-border-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-bg-tertiary);
+  border-radius: 6px;
+  border: 2px solid var(--color-bg-primary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-secondary);
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--color-bg-primary);
+}
+
+/* Firefox scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-bg-tertiary) var(--color-bg-primary);
 }
 
 .wrap {

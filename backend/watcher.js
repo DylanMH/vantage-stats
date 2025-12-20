@@ -61,12 +61,15 @@ async function upsertRun(db, file) {
     // content hash (robust dedupe)
     const hash = await hashFile(file);
 
+    // Check if practice mode is active
+    const isPracticeMode = await getSettingBoolean(db, 'practice_mode_active', false);
+
     // insert-or-ignore by unique hash
     const wasInserted = await db.run(
         `INSERT OR IGNORE INTO runs
      (task_id, hash, filename, path, played_at, score, accuracy, hits, shots, duration, score_per_min,
-      avg_ttk, overshots, reloads, fps_avg, meta)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, json(?))`,
+      avg_ttk, overshots, reloads, fps_avg, meta, is_practice)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, json(?), ?)`,
         [
             task.id,
             hash,
@@ -88,23 +91,26 @@ async function upsertRun(db, file) {
                 sens_h: parsed.sens_h ?? null,
                 fov: parsed.fov ?? null,
                 source: 'kovaaks-csv'
-            })
+            }),
+            isPracticeMode ? 1 : 0
         ]
     );
 
     const isNewRun = wasInserted.changes > 0;
     
     if (isNewRun) {
-        // Update goal progress for the new run (if goals exist)
-        const runData = {
-            task_name: taskName,
-            accuracy: parsed.accuracy,
-            score: parsed.score,
-            duration: parsed.duration,
-            played_at: parsed.played_at || new Date().toISOString()
-        };
-        
-        await goals.updateGoalProgress(db, runData);
+        // Only update goal progress if NOT in practice mode
+        if (!isPracticeMode) {
+            const runData = {
+                task_name: taskName,
+                accuracy: parsed.accuracy,
+                score: parsed.score,
+                duration: parsed.duration,
+                played_at: parsed.played_at || new Date().toISOString()
+            };
+            
+            await goals.updateGoalProgress(db, runData);
+        }
     }
 
     const row = await db.get(`SELECT id FROM runs WHERE hash = ?`, [hash]);

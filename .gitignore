@@ -34,12 +34,13 @@ Thumbs.db
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+TODOS.txt
 
 # Electron config
 electron/userData/
 config.json
 
-# Test data (optional - users should use their own Kovaak's stats)
+# Test data (optional - users should use their own Vantage Stats)
 CSV from stats/
 
 # Documentation markdown files (keep these for reference but they're internal notes)
@@ -60,4 +61,5 @@ SESSIONS_FIXES.md
 SESSIONS_IMPLEMENTATION.md
 SESSIONS_FINAL_FIXES.md
 BACKEND_OPTIMIZATIONS.md
+REFACTORING_SUMMARY.md
 

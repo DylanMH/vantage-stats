@@ -226,12 +226,12 @@ export default function Profile() {
       </div>
 
       {/* Day-to-Day Comparison */}
-      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4 text-white">
-          Today vs Yesterday
-        </h2>
-        
-        {comparisonData && comparisonData.length > 0 ? (
+      {comparisonData && comparisonData.length > 0 && (
+        <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
+          <h2 className="text-xl font-bold mb-4 text-white">
+            Today vs Yesterday
+          </h2>
+          
           <div className="space-y-4">
             {comparisonData.map((comparison) => (
               <div key={comparison.taskName} className="bg-theme-tertiary rounded-lg p-5 border border-theme-secondary">
@@ -352,15 +352,16 @@ export default function Profile() {
               </div>
             ))}
           </div>
-        ) : (
-          /* Fallback to Recent Tasks when no comparison available */
-          <div className="space-y-3">
-            {todayRuns && todayRuns.length > 0 ? (
-              <>
-                <p className="text-sm text-theme-muted mb-3">
-                  No tasks in common with yesterday. Showing today's runs:
-                </p>
-                {todayRuns.slice(0, 5).map((run) => (
+        </div>
+      )}
+
+      {/* Recent Tasks */}
+      <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
+        <h2 className="text-xl font-bold mb-4 text-white">Recent Tasks</h2>
+        <div className="space-y-3">
+          {todayRuns && todayRuns.length > 0 ? (
+            <>
+              {todayRuns.slice(0, 5).map((run) => (
                   <div key={run.id} className="bg-theme-tertiary rounded-lg p-4 border border-theme-secondary">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-white truncate flex-1 mr-2">{run.task_name}</h3>
@@ -388,15 +389,12 @@ export default function Profile() {
                         </span>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </>
-            ) : recent.length > 0 ? (
-              <>
-                <p className="text-sm text-theme-muted mb-3">
-                  No runs today. Showing recent tasks:
-                </p>
-                {recent.map((run) => (
+                </div>
+              ))}
+            </>
+          ) : recent.length > 0 ? (
+            <>
+              {recent.map((run) => (
                   <div key={run.id} className="bg-theme-tertiary rounded-lg p-4 border border-theme-secondary">
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="font-semibold text-white truncate flex-1 mr-2">{run.task}</h3>
@@ -431,14 +429,13 @@ export default function Profile() {
                         </span>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </>
-            ) : (
-              <p className="text-theme-muted text-sm">No tasks found. Complete some tasks to see them here!</p>
-            )}
-          </div>
-        )}
+                </div>
+              ))}
+            </>
+          ) : (
+            <p className="text-theme-muted text-sm">No tasks found. Complete some tasks to see them here!</p>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -40,6 +40,7 @@ type ChartHostProps = {
     taskName?: string;
     packId?: string;
     timeframe?: string; // 'day', 'week', 'month', 'overall'
+    isPractice?: boolean; // If true, fetch practice mode data
 };
 
 // Calculate moving average for smoothing
@@ -57,7 +58,7 @@ const calculateMovingAverage = (data: number[], windowSize: number = 10): number
     return result;
 };
 
-export default function ChartHost({ title, height = 400, taskName, packId, timeframe = 'overall' }: ChartHostProps) {
+export default function ChartHost({ title, height = 400, taskName, packId, timeframe = 'overall', isPractice = false }: ChartHostProps) {
     const [chartData, setChartData] = useState<ChartData[]>([]);
     const [bestSettings, setBestSettings] = useState<BestSettings | null>(null);
     const [bestFilter, setBestFilter] = useState<'score' | 'accuracy' | 'ttk'>('score');
@@ -91,7 +92,8 @@ export default function ChartHost({ title, height = 400, taskName, packId, timef
             
             if (taskName) {
                 // Build URL with optional days parameter
-                let url = `/api/runs?task=${encodeURIComponent(taskName)}&limit=100`;
+                const baseUrl = isPractice ? '/api/practice/runs' : '/api/runs';
+                let url = `${baseUrl}?task=${encodeURIComponent(taskName)}&limit=100`;
                 if (days !== null) {
                     url += `&days=${days}`;
                 }
@@ -104,10 +106,15 @@ export default function ChartHost({ title, height = 400, taskName, packId, timef
                     setError('Failed to fetch task data');
                 }
                 
-                const settingsResponse = await fetch(getApiUrl(`/api/tasks/${encodeURIComponent(taskName)}/best-settings?filterBy=${bestFilter}`));
-                if (settingsResponse.ok) {
-                    const settings = await settingsResponse.json();
-                    setBestSettings(settings);
+                // Best settings not available for practice mode yet
+                if (!isPractice) {
+                    const settingsResponse = await fetch(getApiUrl(`/api/tasks/${encodeURIComponent(taskName)}/best-settings?filterBy=${bestFilter}`));
+                    if (settingsResponse.ok) {
+                        const settings = await settingsResponse.json();
+                        setBestSettings(settings);
+                    }
+                } else {
+                    setBestSettings(null);
                 }
             } else {
                 // Build query string with optional pack_id and days
@@ -119,7 +126,8 @@ export default function ChartHost({ title, height = 400, taskName, packId, timef
                     params.append('days', days.toString());
                 }
                 const queryString = params.toString();
-                const url = queryString ? `/api/stats/history?${queryString}` : `/api/stats/history`;
+                const baseUrl = isPractice ? '/api/practice/stats/history' : '/api/stats/history';
+                const url = queryString ? `${baseUrl}?${queryString}` : baseUrl;
                 
                 const historyResponse = await fetch(getApiUrl(url));
                 if (historyResponse.ok) {

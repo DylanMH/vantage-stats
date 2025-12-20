@@ -2,6 +2,115 @@
 
 All notable changes to Vantage Stats will be documented in this file.
 
+## [1.3.0] - 2025-12-19
+
+### 🎯 Major Features
+
+#### **Practice Mode Integration with Sessions**
+
+- Sessions started in practice mode are now automatically tagged as practice sessions
+- Practice sessions are visually indicated with 🎯 emoji badges in:
+  - Session lists
+  - Session detail modal headers
+  - Comparison wizard session selectors
+- Practice runs are properly filtered out from main stats and profile comparisons
+- Added database migration to support `is_practice` column on sessions table
+
+#### **Enhanced Practice Mode Toggle Protection**
+
+- Toggling practice mode is now blocked when an active session is running
+- Replaced generic error alerts with beautiful custom modal UI
+- Modal displays:
+  - Clear error message explaining why toggle is blocked
+  - Active session name in highlighted box
+  - User-friendly instructions to end session first
+- Improved user experience with theme-consistent design
+
+#### **Active Session Indicator in Navigation**
+
+- Real-time session status now displayed in navigation bar
+- Shows active session name (or "Session Active" as fallback)
+- Blue pulsing badge indicator positioned next to practice mode badge
+- Updates instantly when sessions start/end (no polling required)
+- Separated from title link to prevent accidental navigation
+
+### ⚡ Performance Improvements
+
+#### **SessionContext Architecture**
+
+- Created `SessionContext` for centralized session state management
+- Implemented `useSession` hook following same pattern as `usePracticeMode`
+- **Eliminated polling overhead** - previously made 30 API calls/minute
+- Instant session state updates via direct context manipulation
+- Consistent architecture across all context providers
+
+#### **Optimized Data Fetching**
+
+- Session indicator uses context instead of polling queries
+- SessionControl component refactored to use context actions
+- Reduced unnecessary API calls and network traffic
+- Lower CPU usage and better battery life on laptops
+
+### 🎨 UI/UX Improvements
+
+#### **Navigation & Layout**
+
+- Fixed navigation alignment to match content containers (max-width: 1600px)
+- Improved spacing between title and status indicators
+- Status indicators (practice mode + session) properly grouped
+- Added full viewport height coverage (`minHeight: 100vh`) to prevent background bleed
+
+#### **Profile Page Enhancements**
+
+- Fixed profile page structure to always show Recent Tasks section
+- Separated "Today vs Yesterday" comparison from Recent Tasks display
+- Both sections now render independently (not as either/or fallback)
+- Consistent dark gray background across all pages
+- Eliminated unexpected blue gradient showing through
+
+### 🛠️ Backend Improvements
+
+#### **Practice Mode Filtering**
+
+- Added `is_practice = 0` filter to `/api/runs/by-day` endpoint
+- Profile page comparisons now properly exclude practice runs
+- Consistent filtering across all stats endpoints
+- Ensures practice runs don't contaminate main performance metrics
+
+### 🐛 Bug Fixes
+
+- Fixed session indicator not appearing until page reload (now instant via context)
+- Fixed profile page showing empty blue background instead of content
+- Fixed navigation title misalignment with content containers
+- Fixed practice mode toggle allowing changes during active session
+- Fixed profile page not displaying recent tasks section
+
+### 🔧 Technical Details
+
+#### **New Frontend Components & Hooks**
+
+- `contexts/SessionContext.tsx` - Session state provider with instant updates
+- `hooks/useSession.ts` - Custom hook for accessing session context
+- Enhanced `PracticeModeContext.tsx` with custom error modal UI
+
+#### **Database Schema Updates**
+
+- Migration: `add_session_practice_mode.js` adds `is_practice` column to sessions table
+- Added index on `is_practice` for faster filtering queries
+
+#### **API Enhancements**
+
+- `/api/sessions/start` now respects practice mode state and tags sessions accordingly
+- `/api/sessions` endpoints filter runs based on session's practice flag
+- `/api/practice/toggle` blocks toggle when active session exists with descriptive error
+- `/api/runs/by-day` filters out practice runs for profile comparisons
+
+#### **Type Safety**
+
+- Updated `Session` type to include `is_practice: number` field
+- Updated `is_active` type from `boolean` to `number` (SQLite compatibility)
+- Fixed all session filtering logic to use explicit `=== 1` / `=== 0` comparisons
+
 ## [1.2.3] - 2025-12-14
 
 ### 🎨 More UI/UX Improvements

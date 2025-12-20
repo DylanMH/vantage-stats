@@ -168,6 +168,11 @@ export default function SessionDetailModal({ sessionId, onClose, onUpdate }: Ses
                 <h2 className="text-2xl font-bold text-white">
                   {session.name || `Session ${session.id}`}
                 </h2>
+                {session.is_practice === 1 && (
+                  <span className="px-3 py-1 bg-purple-500/20 border border-purple-500/50 text-purple-300 text-sm font-medium rounded">
+                    🎯 Practice Session
+                  </span>
+                )}
                 <button
                   onClick={() => {
                     setNewName(session.name || '');

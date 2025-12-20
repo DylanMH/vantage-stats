@@ -35,7 +35,7 @@ export default function SessionsList({ onCompare }: SessionsListProps) {
   };
 
   // Only show completed sessions (not active)
-  const completedSessions = sessions?.filter(s => !s.is_active) || [];
+  const completedSessions = sessions?.filter(s => s.is_active === 0) || [];
 
   if (loading) {
     return (
@@ -76,6 +76,11 @@ export default function SessionsList({ onCompare }: SessionsListProps) {
                   <h3 className="text-white font-semibold truncate">
                     {session.name || `Session ${session.id}`}
                   </h3>
+                  {session.is_practice === 1 && (
+                    <span className="px-2 py-0.5 bg-purple-500/20 border border-purple-500/50 text-purple-300 text-xs font-medium rounded whitespace-nowrap">
+                      🎯 Practice
+                    </span>
+                  )}
                   <span className="text-xs text-theme-muted whitespace-nowrap">
                     {formatDate(session.started_at)}
                   </span>

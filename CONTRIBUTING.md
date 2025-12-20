@@ -1,14 +1,14 @@
-# Contributing to Kovaak's Insight
+# Contributing to Vantage Stats
 
-Thank you for your interest in contributing to Kovaak's Insight! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to Vantage Stats! This document provides guidelines and instructions for contributing.
 
 ## 🚀 Getting Started
 
 1. **Fork the repository** on GitHub
 2. **Clone your fork** locally
    ```bash
-   git clone https://github.com/YOUR_USERNAME/kovaaks-insight.git
-   cd kovaaks-insight
+   git clone https://github.com/YOUR_USERNAME/vantage-stats.git
+   cd vantage-stats
    ```
 3. **Install dependencies**
    ```bash
@@ -163,7 +163,7 @@ Some areas where contributions are especially welcome:
 
 If you have questions about contributing, feel free to:
 
-- Open a [GitHub Discussion](https://github.com/yourusername/kovaaks-insight/discussions)
+- Open a [GitHub Discussion](https://github.com/yourusername/vantage-stats/discussions)
 - Comment on an existing issue
 - Reach out to the maintainers
 
@@ -174,4 +174,4 @@ If you have questions about contributing, feel free to:
 - Focus on the code, not the person
 - Help maintain a welcoming community
 
-Thank you for contributing to Kovaak's Insight! 🎯
+Thank you for contributing to Vantage Stats! 🎯

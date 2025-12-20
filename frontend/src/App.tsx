@@ -5,7 +5,10 @@ import Stats from "./pages/Stats";
 import Goals from "./pages/Goals";
 import Sessions from "./pages/Sessions";
 import Settings from "./pages/Settings";
+import Practice from "./pages/Practice";
 import { ThemeProvider } from "./contexts/ThemeContext.tsx";
+import { PracticeModeProvider } from "./contexts/PracticeModeContext";
+import { SessionProvider } from "./contexts/SessionContext";
 import GoalNotification from "./components/GoalNotification";
 import { useGoalNotifications } from "./hooks/useGoalNotifications";
 import { useRealtimeUpdates } from "./hooks/useRealtimeUpdates";
@@ -25,12 +28,13 @@ function AppContent() {
   });
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--color-bg-primary, #0b0f14)' }}>
+    <div style={{ backgroundColor: 'var(--color-bg-primary, #0b0f14)', minHeight: '100vh' }}>
       <Nav />
-      <main className="max-w-[1600px] mx-auto px-4 my-6">
+      <main className="max-w-[1600px] mx-auto px-4 pt-8 pb-12">
         <Routes>
           <Route path="/" element={<Dashboard />} />
           <Route path="/stats" element={<Stats />} />
+          <Route path="/practice" element={<Practice />} />
           <Route path="/goals" element={<Goals />} />
           <Route path="/sessions" element={<Sessions />} />
           <Route path="/settings" element={<Settings />} />
@@ -55,9 +59,13 @@ function AppContent() {
 export default function App() {
   return (
     <ThemeProvider>
-      <Router>
-        <AppContent />
-      </Router>
+      <PracticeModeProvider>
+        <SessionProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </SessionProvider>
+      </PracticeModeProvider>
     </ThemeProvider>
   );
 }

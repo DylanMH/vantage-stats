@@ -1,21 +1,16 @@
 import { useState, useEffect } from "react";
-import { useQuery } from "../../hooks/useApi";
-import type { Session } from "../../types/sessions";
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { useSession } from "../../hooks/useSession";
 
 type SessionControlProps = {
   onSessionEnd?: () => void;
 };
 
 export default function SessionControl({ onSessionEnd }: SessionControlProps) {
-  const { data: sessions, refetch } = useQuery<Session[]>('activeSessions', '/api/sessions?active=true');
+  const { activeSession, isLoading: contextLoading, startSession, endSession } = useSession();
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const [sessionName, setSessionName] = useState('');
-
-  const activeSession = sessions && sessions.length > 0 ? sessions[0] : null;
+  const [isLoading, setIsLoading] = useState(false);
 
   // Update elapsed time every second for active session
   useEffect(() => {
@@ -48,19 +43,9 @@ export default function SessionControl({ onSessionEnd }: SessionControlProps) {
   const handleStartSession = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/sessions/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: sessionName || null })
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to start session');
-      }
-
-      await refetch();
-      setSessionName(''); // Reset name
-      setShowNamePrompt(false); // Close prompt
+      await startSession(sessionName || undefined);
+      setSessionName('');
+      setShowNamePrompt(false);
     } catch (error) {
       console.error('Error starting session:', error);
       alert('Failed to start session');
@@ -74,18 +59,8 @@ export default function SessionControl({ onSessionEnd }: SessionControlProps) {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/sessions/${activeSession.id}/end`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to end session');
-      }
-
-      await refetch();
+      await endSession();
       
-      // Notify parent to refresh session list
       if (onSessionEnd) {
         onSessionEnd();
       }
@@ -126,7 +101,7 @@ export default function SessionControl({ onSessionEnd }: SessionControlProps) {
           {activeSession ? (
             <button
               onClick={handleEndSession}
-              disabled={isLoading}
+              disabled={isLoading || contextLoading}
               className="px-6 py-3 bg-red-500 hover:bg-red-600 disabled:bg-red-500/50 text-white rounded-lg font-medium transition-colors"
             >
               {isLoading ? 'Ending...' : 'End Session'}
@@ -134,7 +109,7 @@ export default function SessionControl({ onSessionEnd }: SessionControlProps) {
           ) : (
             <button
               onClick={() => setShowNamePrompt(true)}
-              disabled={isLoading}
+              disabled={isLoading || contextLoading}
               className="px-6 py-3 bg-theme-accent hover:bg-theme-accent/80 disabled:bg-theme-accent/50 text-white rounded-lg font-medium transition-colors"
             >
               Start Session
@@ -183,7 +158,7 @@ export default function SessionControl({ onSessionEnd }: SessionControlProps) {
               </button>
               <button
                 onClick={handleStartSession}
-                disabled={isLoading}
+                disabled={isLoading || contextLoading}
                 className="px-4 py-2 bg-theme-accent hover:bg-theme-accent/80 disabled:bg-theme-accent/50 text-white rounded-lg font-medium transition-colors"
               >
                 {isLoading ? 'Starting...' : 'Start Session'}

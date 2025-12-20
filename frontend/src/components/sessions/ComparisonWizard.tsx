@@ -22,7 +22,7 @@ export default function ComparisonWizard({ onClose, onComplete }: ComparisonWiza
   const [blockHours, setBlockHours] = useState(2);
 
   const { data: sessions } = useQuery<Session[]>('sessions', '/api/sessions');
-  const completedSessions = sessions?.filter(s => !s.is_active) || [];
+  const completedSessions = sessions?.filter(s => s.is_active === 0) || [];
 
   const handleRunComparison = async () => {
     setLoading(true);
@@ -110,7 +110,7 @@ export default function ComparisonWizard({ onClose, onComplete }: ComparisonWiza
                   <option value="">Select a session...</option>
                   {completedSessions.map((session) => (
                     <option key={session.id} value={session.id}>
-                      {session.name || `Session ${session.id}`} - {new Date(session.started_at).toLocaleDateString()}
+                      {session.is_practice === 1 ? '🎯 ' : ''}{session.name || `Session ${session.id}`} - {new Date(session.started_at).toLocaleDateString()}
                     </option>
                   ))}
                 </select>
@@ -126,7 +126,7 @@ export default function ComparisonWizard({ onClose, onComplete }: ComparisonWiza
                   <option value="">Select a session...</option>
                   {completedSessions.map((session) => (
                     <option key={session.id} value={session.id}>
-                      {session.name || `Session ${session.id}`} - {new Date(session.started_at).toLocaleDateString()}
+                      {session.is_practice === 1 ? '🎯 ' : ''}{session.name || `Session ${session.id}`} - {new Date(session.started_at).toLocaleDateString()}
                     </option>
                   ))}
                 </select>
