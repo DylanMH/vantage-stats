@@ -2,6 +2,86 @@
 
 All notable changes to Vantage Stats will be documented in this file.
 
+## [1.3.1] - 2025-12-20
+
+### 🐛 Bug Fixes
+
+#### **Today vs Yesterday Stats Comparison**
+
+- Fixed critical timezone bug causing incorrect date comparisons on Profile page
+- Issue: Runs were showing for "today" even when no runs were played that day
+- Root cause: UTC timestamps in database weren't being converted to local time for date extraction
+- Solution: Query now properly converts UTC timestamps to local timezone before date comparison
+- Works correctly across all timezones without requiring data migration
+
+### 🎨 UI/UX Improvements
+
+#### **Themed Confirmation Dialogs**
+
+- Replaced native browser `confirm()` dialogs with beautiful themed UI components
+- Created `ConfirmDialog` component matching app theming
+- Playlist deletion now uses in-app modal instead of system dialog
+- Consistent visual experience across all confirmation prompts
+- Proper styling with theme colors and smooth transitions
+
+#### **Graph Display Enhancements**
+
+- **TTK Graph Reversed**: Lower TTK values now correctly show graph going **down** (more intuitive)
+  - Previously: Graph went up when TTK decreased (confusing)
+  - Now: Graph goes down when TTK decreases (better = lower on graph)
+  - Added "(Lower is Better)" label for clarity
+- **Smoother Graph Lines**: Implemented weighted moving average algorithm
+  - Increased smoothing window from 10 to 15 data points
+  - Center points weighted more heavily for better trend representation
+  - Eliminates choppy/jagged graph lines
+  - Applied to all metrics: Score, Accuracy, and TTK
+
+### ✨ New Features
+
+#### **Session Task Breakdown Analysis**
+
+- Added comprehensive task analysis to session detail view
+- Shows per-task statistics within each session:
+  - Number of runs per task
+  - Average Score, Accuracy, and TTK per task
+  - **Best Run** highlighting for each task with full metrics
+- Tasks sorted by run count (most played first)
+- Visual gradient highlighting for best runs
+- Helps identify which scenarios you performed best in during training sessions
+
+### 🔧 Configuration Changes
+
+#### **Playlist Import Behavior**
+
+- Removed automatic playlist import on every app launch
+- Previously: Default playlists imported on every startup (causing duplicates)
+- Now: Playlists only import when manually triggered by user
+- Reduces startup time and prevents duplicate pack creation
+- Users maintain full control over when playlists are imported
+
+### 🛠️ Technical Details
+
+#### **Backend Improvements**
+
+- Enhanced `parseDateSafe()` to store dates in local time format
+- Added `toLocalISOString()` helper for timezone-aware date formatting
+- Updated `/api/runs/by-day` endpoint with proper timezone offset calculation
+- SQLite `datetime()` modifier now correctly adjusts UTC to local time
+
+#### **Frontend Components**
+
+- New `ConfirmDialog.tsx` reusable confirmation component
+- Enhanced `SessionDetailModal.tsx` with task breakdown calculations
+- Optimized `ChartHost.tsx` with weighted moving average implementation
+- Updated `Chart.tsx` TTK display logic
+
+#### **Graph Algorithm**
+
+- Weighted moving average with configurable window size
+- Distance-based weighting: closer points have higher influence
+- Maintains data integrity while smoothing visual presentation
+- Adaptive to dataset size (requires minimum 3 points)
+
 ## [1.3.0] - 2025-12-19
 
 ### 🎯 Major Features

@@ -43,17 +43,30 @@ type ChartHostProps = {
     isPractice?: boolean; // If true, fetch practice mode data
 };
 
-// Calculate moving average for smoothing
-const calculateMovingAverage = (data: number[], windowSize: number = 10): number[] => {
-    if (data.length < windowSize) return data;
+// Calculate weighted moving average for smoother results
+const calculateMovingAverage = (data: number[], windowSize: number = 15): number[] => {
+    if (data.length < 3) return data;
     
     const result: number[] = [];
+    const halfWindow = Math.floor(windowSize / 2);
+    
     for (let i = 0; i < data.length; i++) {
-        const start = Math.max(0, i - Math.floor(windowSize / 2));
-        const end = Math.min(data.length, i + Math.ceil(windowSize / 2));
+        const start = Math.max(0, i - halfWindow);
+        const end = Math.min(data.length, i + halfWindow + 1);
         const window = data.slice(start, end);
-        const avg = window.reduce((sum, val) => sum + val, 0) / window.length;
-        result.push(avg);
+        
+        // Weighted average: center point gets more weight
+        let weightedSum = 0;
+        let totalWeight = 0;
+        
+        for (let j = 0; j < window.length; j++) {
+            const distance = Math.abs(j - (i - start));
+            const weight = Math.max(1, halfWindow - distance);
+            weightedSum += window[j] * weight;
+            totalWeight += weight;
+        }
+        
+        result.push(weightedSum / totalWeight);
     }
     return result;
 };
@@ -163,7 +176,7 @@ export default function ChartHost({ title, height = 400, taskName, packId, timef
     const scoreData = useMemo(() => {
         const filtered = chartData.filter(d => d.score !== null);
         const scores = filtered.map(d => d.score!);
-        const smoothed = calculateMovingAverage(scores, 10);
+        const smoothed = calculateMovingAverage(scores, 15);
         return smoothed.map((value, i) => ({
             value,
             date: filtered[i].played_at
@@ -173,7 +186,7 @@ export default function ChartHost({ title, height = 400, taskName, packId, timef
     const accuracyData = useMemo(() => {
         const filtered = chartData.filter(d => d.accuracy !== null);
         const accuracies = filtered.map(d => d.accuracy!);
-        const smoothed = calculateMovingAverage(accuracies, 10);
+        const smoothed = calculateMovingAverage(accuracies, 15);
         return smoothed.map((value, i) => ({
             value,
             date: filtered[i].played_at
@@ -183,7 +196,7 @@ export default function ChartHost({ title, height = 400, taskName, packId, timef
     const ttkData = useMemo(() => {
         const filtered = chartData.filter(d => d.avg_ttk !== null);
         const ttks = filtered.map(d => d.avg_ttk!);
-        const smoothed = calculateMovingAverage(ttks, 10);
+        const smoothed = calculateMovingAverage(ttks, 15);
         return smoothed.map((value, i) => ({
             value,
             date: filtered[i].played_at
@@ -326,8 +339,7 @@ export default function ChartHost({ title, height = 400, taskName, packId, timef
                                     <Chart 
                                         data={ttkData} 
                                         color="var(--color-chart-ttk, #f97316)" 
-                                        label="TTK" 
-                                        inverted 
+                                        label="TTK (Lower is Better)" 
                                         onPointClick={(date) => handleDateClick(date)} 
                                     />
                                 </div>

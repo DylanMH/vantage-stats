@@ -17,6 +17,15 @@ type SessionWithRuns = Session & {
   runs: Run[];
 };
 
+type TaskBreakdown = {
+  task_name: string;
+  count: number;
+  avg_score: number;
+  avg_accuracy: number;
+  avg_ttk: number;
+  best_run: Run;
+};
+
 type SessionDetailModalProps = {
   sessionId: number;
   onClose: () => void;
@@ -120,6 +129,57 @@ export default function SessionDetailModal({ sessionId, onClose, onUpdate }: Ses
     const minutes = Math.floor((seconds % 3600) / 60);
     return hours > 0 ? `${hours}h ${minutes}m` : `${minutes}m`;
   };
+
+  const calculateTaskBreakdown = (): TaskBreakdown[] => {
+    if (!session || !session.runs || session.runs.length === 0) return [];
+
+    const taskMap = new Map<string, Run[]>();
+    
+    session.runs.forEach(run => {
+      const existing = taskMap.get(run.task_name) || [];
+      existing.push(run);
+      taskMap.set(run.task_name, existing);
+    });
+
+    const breakdown: TaskBreakdown[] = [];
+
+    taskMap.forEach((runs, task_name) => {
+      const validScores = runs.filter(r => r.score !== null);
+      const validAccuracy = runs.filter(r => r.accuracy !== null);
+      const validTtk = runs.filter(r => r.avg_ttk !== null);
+
+      const avg_score = validScores.length > 0 
+        ? validScores.reduce((sum, r) => sum + r.score!, 0) / validScores.length 
+        : 0;
+      
+      const avg_accuracy = validAccuracy.length > 0
+        ? validAccuracy.reduce((sum, r) => sum + r.accuracy!, 0) / validAccuracy.length
+        : 0;
+      
+      const avg_ttk = validTtk.length > 0
+        ? validTtk.reduce((sum, r) => sum + r.avg_ttk!, 0) / validTtk.length
+        : 0;
+
+      const best_run = runs.reduce((best, current) => {
+        if (!best.score) return current;
+        if (!current.score) return best;
+        return current.score > best.score ? current : best;
+      }, runs[0]);
+
+      breakdown.push({
+        task_name,
+        count: runs.length,
+        avg_score,
+        avg_accuracy,
+        avg_ttk,
+        best_run
+      });
+    });
+
+    return breakdown.sort((a, b) => b.count - a.count);
+  };
+
+  const taskBreakdown = calculateTaskBreakdown();
 
   if (loading || !session) {
     return (
@@ -281,9 +341,76 @@ export default function SessionDetailModal({ sessionId, onClose, onUpdate }: Ses
             )}
           </div>
 
+          {/* Task Breakdown Analysis */}
+          {taskBreakdown.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-white mb-3">Task Breakdown</h3>
+              <div className="space-y-3">
+                {taskBreakdown.map((task) => (
+                  <div key={task.task_name} className="bg-theme-tertiary border border-theme-secondary rounded-lg p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-semibold text-white text-lg">{task.task_name}</h4>
+                      <span className="text-sm text-theme-muted">{task.count} run{task.count > 1 ? 's' : ''}</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-3 gap-4 mb-4">
+                      <div className="bg-theme-secondary rounded-lg p-3">
+                        <p className="text-xs text-theme-muted mb-1">Avg Score</p>
+                        <p className="text-xl font-bold text-blue-400">
+                          {task.avg_score > 0 ? Math.round(task.avg_score).toLocaleString() : '—'}
+                        </p>
+                      </div>
+                      <div className="bg-theme-secondary rounded-lg p-3">
+                        <p className="text-xs text-theme-muted mb-1">Avg Accuracy</p>
+                        <p className="text-xl font-bold text-green-400">
+                          {task.avg_accuracy > 0 ? `${task.avg_accuracy.toFixed(1)}%` : '—'}
+                        </p>
+                      </div>
+                      <div className="bg-theme-secondary rounded-lg p-3">
+                        <p className="text-xs text-theme-muted mb-1">Avg TTK</p>
+                        <p className="text-xl font-bold text-orange-400">
+                          {task.avg_ttk > 0 ? `${task.avg_ttk.toFixed(3)}s` : '—'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-r from-green-900/20 to-blue-900/20 border border-green-500/30 rounded-lg p-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold text-green-300 uppercase">Best Run</p>
+                        <span className="text-xs text-theme-muted">
+                          {new Date(task.best_run.played_at).toLocaleTimeString()}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3 text-sm">
+                        <div>
+                          <span className="text-theme-muted block text-xs">Score</span>
+                          <span className="text-blue-400 font-bold">
+                            {task.best_run.score !== null ? task.best_run.score.toLocaleString() : '—'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-theme-muted block text-xs">Accuracy</span>
+                          <span className="text-green-400 font-bold">
+                            {task.best_run.accuracy !== null ? `${task.best_run.accuracy.toFixed(1)}%` : '—'}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-theme-muted block text-xs">TTK</span>
+                          <span className="text-orange-400 font-bold">
+                            {task.best_run.avg_ttk !== null ? `${task.best_run.avg_ttk.toFixed(3)}s` : '—'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Runs List */}
           <div>
-            <h3 className="text-lg font-semibold text-white mb-3">Runs ({session.runs.length})</h3>
+            <h3 className="text-lg font-semibold text-white mb-3">All Runs ({session.runs.length})</h3>
             {session.runs.length > 0 ? (
               <div className="space-y-2">
                 {session.runs.map((run) => (

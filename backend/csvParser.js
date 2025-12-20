@@ -122,11 +122,22 @@ function parseDurationFlexible(v) {
     return Number.isFinite(n) ? n : null; // assume seconds
 }
 
+function toLocalISOString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    const ms = String(date.getMilliseconds()).padStart(3, '0');
+    return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}`;
+}
+
 function parseDateSafe(rawStr, filename) {
     if (rawStr) {
         // Try parsing as-is first
         const d = new Date(rawStr);
-        if (!isNaN(d.getTime())) return d.toISOString();
+        if (!isNaN(d.getTime())) return toLocalISOString(d);
         
         // Try parsing time format (HH:MM:SS.ms) and combine with file date
         const timeMatch = rawStr.match(/^(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?$/);
@@ -136,23 +147,19 @@ function parseDateSafe(rawStr, filename) {
             if (dateMatch) {
                 const [_, Y, M, D] = dateMatch;
                 const [__, h, m, s, ms] = timeMatch;
-                // Parse as LOCAL time (no Z suffix) since Kovaak's uses local timestamps
-                const iso = `${Y}-${M}-${D}T${h}:${m}:${s}.${ms || '000'}`;
-                const dateObj = new Date(iso);
-                if (!isNaN(dateObj.getTime())) return dateObj.toISOString();
+                // Return as local time string (no conversion to UTC)
+                return `${Y}-${M}-${D}T${h}:${m}:${s}.${ms || '000'}`;
             }
         }
     }
     
-    // Fallback to filename date extraction - also use local time
+    // Fallback to filename date extraction - return as local time
     const base = path.basename(filename);
     const m = base.match(/(\d{4})\.(\d{2})\.(\d{2})-(\d{2})\.(\d{2})\.(\d{2})/);
     if (m) {
         const [_, Y, M, D, h, mi, se] = m;
-        // Parse as LOCAL time (no Z suffix)
-        const iso = `${Y}-${M}-${D}T${h}:${mi}:${se}`;
-        const d = new Date(iso);
-        if (!isNaN(d.getTime())) return d.toISOString();
+        // Return as local time string (no conversion to UTC)
+        return `${Y}-${M}-${D}T${h}:${mi}:${se}.000`;
     }
     return null;
 }

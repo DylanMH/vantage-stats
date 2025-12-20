@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, getApiUrl } from "../hooks/useApi";
 import Toast from "../components/Toast";
+import ConfirmDialog from "../components/ConfirmDialog";
 import { useTheme } from "../hooks/useTheme";
 import { themes } from "../themes";
 import type { ThemeName } from "../themes";
@@ -39,6 +40,11 @@ export default function Settings() {
   const [tempFolder, setTempFolder] = useState("");
   const [isRescanning, setIsRescanning] = useState(false);
   const [appVersion, setAppVersion] = useState<string>('');
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    packId: number;
+    packName: string;
+  }>({ isOpen: false, packId: 0, packName: '' });
   
   // Load settings on mount
   useEffect(() => {
@@ -414,10 +420,13 @@ export default function Settings() {
     }
   };
 
-  const handleDeletePack = async (packId: number, packName: string) => {
-    if (!confirm(`Are you sure you want to delete "${packName}"? This cannot be undone.`)) {
-      return;
-    }
+  const handleDeletePack = (packId: number, packName: string) => {
+    setConfirmDialog({ isOpen: true, packId, packName });
+  };
+
+  const confirmDeletePack = async () => {
+    const { packId } = confirmDialog;
+    setConfirmDialog({ isOpen: false, packId: 0, packName: '' });
 
     try {
       const response = await fetch(getApiUrl(`/api/packs/${packId}`), {
@@ -425,14 +434,14 @@ export default function Settings() {
       });
 
       if (response.ok) {
-        alert('Pack deleted successfully!');
+        setToast({ message: 'Pack deleted successfully!', type: 'success' });
         window.location.reload();
       } else {
-        alert('Failed to delete pack');
+        setToast({ message: 'Failed to delete pack', type: 'error' });
       }
     } catch (err) {
       const error = err as Error;
-      alert('Failed to delete pack: ' + error.message);
+      setToast({ message: `Failed to delete pack: ${error.message}`, type: 'error' });
     }
   };
 
@@ -869,6 +878,17 @@ CONFIRM: Yes, delete everything!
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmDialog.isOpen}
+        title="Delete Pack"
+        message={`Are you sure you want to delete "${confirmDialog.packName}"? This cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDeletePack}
+        onCancel={() => setConfirmDialog({ isOpen: false, packId: 0, packName: '' })}
+        danger={true}
+      />
     </div>
   );
 }

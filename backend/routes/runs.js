@@ -73,8 +73,20 @@ module.exports = (db) => {
                 return res.status(400).json({ error: 'Invalid day parameter. Use "today" or "yesterday".' });
             }
             
-            const dateStr = targetDate.toISOString().split('T')[0];
+            // Get timezone offset in minutes and convert to SQLite modifier format
+            const offsetMinutes = targetDate.getTimezoneOffset();
+            const offsetHours = Math.floor(Math.abs(offsetMinutes) / 60);
+            const offsetMins = Math.abs(offsetMinutes) % 60;
+            const offsetSign = offsetMinutes > 0 ? '-' : '+'; // Inverted because getTimezoneOffset returns positive for behind UTC
+            const offsetStr = `${offsetSign}${String(offsetHours).padStart(2, '0')}:${String(offsetMins).padStart(2, '0')}`;
             
+            // Use local date format (YYYY-MM-DD)
+            const year = targetDate.getFullYear();
+            const month = String(targetDate.getMonth() + 1).padStart(2, '0');
+            const dayOfMonth = String(targetDate.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${dayOfMonth}`;
+            
+            // Convert UTC timestamps to local time before extracting date
             const runs = await db.all(`
                 SELECT 
                     r.id,
@@ -88,10 +100,10 @@ module.exports = (db) => {
                     t.name AS task_name
                 FROM runs r
                 JOIN tasks t ON r.task_id = t.id
-                WHERE DATE(r.played_at) = ?
+                WHERE DATE(datetime(r.played_at, ?)) = ?
                   AND r.is_practice = 0
                 ORDER BY r.played_at DESC
-            `, [dateStr]);
+            `, [offsetStr, dateStr]);
             
             res.json(runs);
         } catch (e) {

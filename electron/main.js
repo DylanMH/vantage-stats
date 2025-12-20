@@ -249,12 +249,6 @@ app.whenReady().then(async () => {
         // Wait for initial CSV scan to complete before showing UI
         watcher = await startWatcher(cfg.stats_path, db);
         
-        // Auto-import playlists if enabled
-        if (cfg.playlists_path && cfg.auto_import_playlists) {
-            console.log('🎵 Auto-importing playlists...');
-            await importPlaylistsAsPacks(cfg.playlists_path, db);
-        }
-        
         console.log('✅ Data loaded! Launching interface...');
         
         // Show dashboard immediately after data is ready
@@ -329,12 +323,6 @@ app.whenReady().then(async () => {
         
         // Wait for initial CSV scan to complete
         watcher = await startWatcher(newCfg.stats_path, db);
-        
-        // Auto-import playlists if enabled
-        if (newCfg.playlists_path && newCfg.auto_import_playlists) {
-            console.log('🎵 Auto-importing playlists...');
-            await importPlaylistsAsPacks(newCfg.playlists_path, db);
-        }
         
         console.log('✅ Setup complete! Loading dashboard...');
         
