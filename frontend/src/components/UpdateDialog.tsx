@@ -81,9 +81,10 @@ export default function UpdateDialog() {
                 <DocumentIcon />
                 What's New
               </h3>
-              <div className="text-sm text-theme-muted whitespace-pre-wrap">
-                {updateInfo.releaseNotes}
-              </div>
+              <div 
+                className="text-sm text-theme-muted prose prose-invert prose-sm max-w-none"
+                dangerouslySetInnerHTML={{ __html: updateInfo.releaseNotes }}
+              />
             </div>
           )}
 
