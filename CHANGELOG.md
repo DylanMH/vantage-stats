@@ -2,6 +2,16 @@
 
 All notable changes to Vantage Stats will be documented in this file.
 
+## [1.3.6] - 2025-12-27
+
+### Small Startup Fixes
+
+- Added automatic playlist import on app startup when auto_import_playlists setting is enabled
+- Moved playlist auto-import to run after initial CSV scan in both normal startup and setup completion flows
+- Removed unused packs service import from main.js
+- Changed default window size from 1920x1080 to 900x900 for better initial UX
+- Fixed release notes display in UpdateDialog by stripping HTML tags and using proper markdown parsing
+
 ## [1.3.5] - 2025-12-20
 
 ### 🏗️ Backend Architecture Refactoring
