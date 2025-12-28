@@ -363,9 +363,19 @@ app.whenReady().then(async () => {
 
     // Handler to pick a JSON file for playlist import
     ipcMain.handle("pick-playlist-json", async () => {
+        // Get playlists folder from database settings
+        let defaultPath;
+        if (db) {
+            const playlistsFolder = await getSetting(db, 'playlists_folder');
+            if (playlistsFolder && fs.existsSync(playlistsFolder)) {
+                defaultPath = playlistsFolder;
+            }
+        }
+        
         const result = await dialog.showOpenDialog(mainWindow, {
             properties: ["openFile"],
             title: "Select Playlist JSON File",
+            defaultPath: defaultPath,
             filters: [
                 { name: 'JSON Files', extensions: ['json'] }
             ]

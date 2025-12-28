@@ -71,8 +71,6 @@ function initDb(dbPath) {
       CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT UNIQUE NOT NULL DEFAULT 'Player',
-        total_runs INTEGER DEFAULT 0,
-        total_playtime REAL DEFAULT 0,  -- seconds
         created_at TEXT DEFAULT (datetime('now')),
         updated_at TEXT DEFAULT (datetime('now'))
       )

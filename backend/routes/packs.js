@@ -28,14 +28,25 @@ module.exports = (db) => {
         try {
             const { name, description, game_focus, tasks } = req.body;
             
+            console.log('🔍 POST /api/packs - Creating pack:', { name, description, game_focus, taskCount: tasks?.length });
+            
+            // Check if pack with same name already exists
+            const existing = await db.get('SELECT id FROM packs WHERE name = ?', [name]);
+            if (existing) {
+                console.log(`⚠️ Pack already exists: ${name}`);
+                return res.status(400).json({ error: `Pack "${name}" already exists` });
+            }
+            
             const result = await db.run(
                 `INSERT INTO packs (name, description, game_focus) VALUES (?, ?, ?)`,
                 [name, description || null, game_focus || null]
             );
             
             const packId = result.lastID;
+            console.log('✅ Pack created with ID:', packId);
             
             if (tasks && tasks.length > 0) {
+                console.log('🔗 Linking tasks to pack...');
                 for (const taskName of tasks) {
                     const task = await db.get(`SELECT id FROM tasks WHERE name = ?`, [taskName]);
                     if (task) {
@@ -43,6 +54,9 @@ module.exports = (db) => {
                             `INSERT OR IGNORE INTO pack_tasks (pack_id, task_id) VALUES (?, ?)`,
                             [packId, task.id]
                         );
+                        console.log(`  ✓ Linked task: ${taskName}`);
+                    } else {
+                        console.log(`  ⚠️ Task not found: ${taskName}`);
                     }
                 }
             }
@@ -50,8 +64,13 @@ module.exports = (db) => {
             const pack = await db.get(`SELECT * FROM packs WHERE id = ?`, [packId]);
             res.json(pack);
         } catch (e) {
-            console.error(e);
-            res.status(500).json({ error: 'failed to create pack' });
+            console.error('❌ POST /api/packs ERROR:', e);
+            console.error('Error details:', {
+                message: e.message,
+                code: e.code,
+                errno: e.errno
+            });
+            res.status(500).json({ error: 'failed to create pack', details: e.message });
         }
     });
 
