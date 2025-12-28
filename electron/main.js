@@ -9,7 +9,6 @@ const { runMigrations } = require("../backend/config/migrationRunner");
 const { startWatcher } = require("../backend/core/data-import/watcher");
 const { startServer, initializeStatsFolder } = require("../backend/config/server");
 const { importPlaylistsAsPacks } = require('../backend/core/data-import/playlistImporter');
-const packs = require('../backend/services/packs');
 const { parseCsvToRun } = require("../backend/core/data-import/csvParser");
 const { getSetting, setSetting } = require("../backend/services/settings");
 
@@ -156,8 +155,8 @@ function createWindow(showSetup = false) {
     const iconPath = path.join(__dirname, '../assets/vs-icon-logo.png');
 
     mainWindow = new BrowserWindow({
-        width: 1920,
-        height: 1080,
+        width: 900,
+        height: 900,
         minWidth: 800,
         minHeight: 600,
         title: 'Vantage Stats',
@@ -243,6 +242,12 @@ app.whenReady().then(async () => {
         // Wait for initial CSV scan to complete before showing UI
         watcher = await startWatcher(cfg.stats_path, db);
         
+        // Auto-import playlists if enabled
+        if (cfg.auto_import_playlists && cfg.playlists_path) {
+            console.log('🎵 Auto-importing playlists...');
+            await importPlaylistsAsPacks(cfg.playlists_path, db);
+        }
+        
         console.log('✅ Data loaded! Launching interface...');
         
         // Show dashboard immediately after data is ready
@@ -318,10 +323,13 @@ app.whenReady().then(async () => {
         // Wait for initial CSV scan to complete
         watcher = await startWatcher(newCfg.stats_path, db);
         
-        console.log('✅ Setup complete! Loading dashboard...');
+        // Auto-import playlists if enabled
+        if (newCfg.auto_import_playlists && newCfg.playlists_path) {
+            console.log('🎵 Auto-importing playlists...');
+            await importPlaylistsAsPacks(newCfg.playlists_path, db);
+        }
         
-        // Run backfill for existing data (async, don't wait)
-        backfillHashes(db).then(r => console.log('hash backfill:', r)).catch(console.error);
+        console.log('✅ Setup complete! Loading dashboard...');
         
         // Switch to dashboard immediately after scan completes
         if (isDev && fs.existsSync(path.join(__dirname, '../frontend'))) {

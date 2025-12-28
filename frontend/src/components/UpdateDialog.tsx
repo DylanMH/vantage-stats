@@ -14,6 +14,12 @@ export default function UpdateDialog() {
   const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
   const [downloading, setDownloading] = useState(false);
 
+  const stripHtmlTags = (html: string): string => {
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  };
+
   useEffect(() => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -81,10 +87,9 @@ export default function UpdateDialog() {
                 <DocumentIcon />
                 What's New
               </h3>
-              <div 
-                className="text-sm text-theme-muted prose prose-invert prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: updateInfo.releaseNotes }}
-              />
+              <div className="text-sm text-theme-muted whitespace-pre-wrap">
+                {stripHtmlTags(updateInfo.releaseNotes)}
+              </div>
             </div>
           )}
 
