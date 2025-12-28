@@ -2,6 +2,15 @@
 
 All notable changes to Vantage Stats will be documented in this file.
 
+## [1.3.8] - 2025-12-28
+
+### More Fixes
+
+- Database moved to directory 'data' in userData directory
+- When running in dev mode, a dev database is created in the 'data' directory
+- Added "Dev Mode" UI to nav bar when in dev mode
+- Old databases will automatically be moved to the new location
+
 ## [1.3.7] - 2025-12-28
 
 ### Small Fixes
