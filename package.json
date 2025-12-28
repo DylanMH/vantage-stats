@@ -1,6 +1,6 @@
 {
   "name": "vantage-stats",
-  "version": "1.3.7",
+  "version": "1.3.8",
   "main": "electron/main.js",
   "description": "Vantage Stats - Personal performance tracker for FPS Aim Trainers",
   "repository": {
@@ -25,9 +25,9 @@
     "sqlite3": "^5.1.7"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.6.2",
     "electron": "^39.0.0",
-    "electron-builder": "^26.0.12",
-    "electron-rebuild": "^3.2.9"
+    "electron-builder": "^26.0.12"
   },
   "build": {
     "appId": "com.vantagestats.app",

@@ -211,7 +211,33 @@ app.whenReady().then(async () => {
     }
 
     // Database lives in userData directory (works in both dev and packaged app)
-    const backendDbPath = path.join(app.getPath("userData"), "vantage.db");
+    // Dev and production use separate databases to avoid conflicts
+    const userDataPath = app.getPath("userData");
+    const dataDir = path.join(userDataPath, "data");
+    if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+    }
+    
+    const dbFileName = isDev ? "vantage-dev.db" : "vantage.db";
+    const backendDbPath = path.join(dataDir, dbFileName);
+    
+    // Migrate old database location to new folder structure (for existing users)
+    const oldDbPath = path.join(userDataPath, "vantage.db");
+    if (!isDev && fs.existsSync(oldDbPath) && !fs.existsSync(backendDbPath)) {
+        try {
+            fs.copyFileSync(oldDbPath, backendDbPath);
+            console.log('📦 Migrated database from old location to data folder');
+            // Keep old file as backup for now (can be manually deleted later)
+            fs.renameSync(oldDbPath, path.join(userDataPath, "vantage.db.old"));
+            console.log('   Old database backed up as vantage.db.old');
+        } catch (err) {
+            console.error('⚠️  Failed to migrate database:', err.message);
+        }
+    }
+    
+    console.log('💾 Database path:', backendDbPath);
+    console.log('📁 userData directory:', userDataPath);
+    console.log('🔧 isDev:', isDev);
 
     // if config already exists, start everything and show dashboard
     if (cfg.stats_path && cfg.db_path) {

@@ -8,6 +8,9 @@ export default function Nav() {
     const { isPracticeMode } = usePracticeMode();
     const { activeSession } = useSession();
     
+    // Detect dev mode - Vite dev server runs on localhost:5173
+    const isDevMode = window.location.port === '5173' || window.location.hostname === 'localhost';
+    
     const getNavLinkClass = (path: string) => {
         const isActive = location.pathname === path;
         return isActive 
@@ -25,8 +28,14 @@ export default function Nav() {
                     </Link>
                     
                     {/* Status Indicators */}
-                    {(isPracticeMode || activeSession) && (
+                    {(isPracticeMode || activeSession || isDevMode) && (
                         <div className="flex items-center gap-2">
+                            {isDevMode && (
+                                <span className="flex items-center gap-1.5 px-2 py-1 bg-orange-500/20 border border-orange-500/30 rounded text-xs font-semibold text-orange-400">
+                                    <span className="w-2 h-2 bg-orange-400 rounded-full" />
+                                    DEV MODE
+                                </span>
+                            )}
                             {isPracticeMode && (
                                 <span className="flex items-center gap-1.5 px-2 py-1 bg-green-500/20 border border-green-500/30 rounded text-xs font-semibold text-green-400">
                                     <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
