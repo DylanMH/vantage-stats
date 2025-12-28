@@ -2,6 +2,14 @@
 
 All notable changes to Vantage Stats will be documented in this file.
 
+## [1.3.7] - 2025-12-28
+
+### Small Fixes
+
+- Added database cleanup script to remove unused columns from users table
+- Added duplicate name validation to pack creation endpoint
+- Added default value for playlists_folder setting in settings.json
+
 ## [1.3.6] - 2025-12-27
 
 ### Small Startup Fixes
