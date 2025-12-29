@@ -199,6 +199,7 @@ This project is licensed under the Creative Commons Attribution-NonCommercial-Sh
 - [X] Advanced filtering options
 - [ ] Cloud backup/sync (optional)
 - [X] Task specific goals
+- [ ] Ranked
 
 ---
 
