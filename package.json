@@ -7,7 +7,7 @@
     "type": "git",
     "url": "https://github.com/DylanMH/vantage-stats.git"
   },
-  "license": "ISC",
+  "license": "CC-BY-NC-SA-4.0",
   "scripts": {
     "start": "electron .",
     "dev": "npm run dev --prefix frontend",

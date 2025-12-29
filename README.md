@@ -5,7 +5,7 @@ A powerful desktop application for tracking, analyzing, and visualizing your FPS
 > **Disclaimer:** Vantage Stats is an independent, community-created tool and is not affiliated with, endorsed by, or associated with Kovaak's FPS Aim Trainer, Aim Lab, or any other FPS training software. All trademarks belong to their respective owners.
 
 ![Platform](https://img.shields.io/badge/platform-Windows-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
+![License](https://img.shields.io/badge/license-CC--BY--NC--SA--4.0-green)
 ![Built with](https://img.shields.io/badge/built%20with-Electron-47848F)
 
 👉 [Download the latest](https://github.com/DylanMH/vantage-stats/releases)
@@ -195,7 +195,13 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📝 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License - see the [LICENSE](LICENSE) file for details.
+
+**What this means:**
+- ✅ Free to use and modify for personal, non-commercial purposes
+- ✅ Must give credit to Vantage Stats
+- ✅ Must share modifications under the same license
+- ❌ Cannot be used for commercial purposes without permission
 
 ## 🙏 Acknowledgments
 
@@ -211,10 +217,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🗺️ Roadmap
 
 - [x] Session tracking and comparison mode
-- [ ] Advanced filtering options
-- [ ] Export data to CSV/JSON
+- [X] Advanced filtering options
 - [ ] Cloud backup/sync (optional)
-- [ ] Task specific goals
+- [X] Task specific goals
 
 ---
 
