@@ -153,27 +153,6 @@ If you prefer to build the app yourself, follow the [Installation](#installation
 - **Build**: Vite, electron-builder
 - **Charts**: Custom SVG-based charting
 
-## 📂 Project Structure
-
-```
-vantage-stats/
-├── frontend/          # React frontend application
-│   ├── src/
-│   │   ├── components/   # Reusable UI components
-│   │   ├── pages/        # Main page components
-│   │   └── hooks/        # Custom React hooks
-├── backend/           # Node.js backend server
-│   ├── server.js         # Express API server
-│   ├── csvParser.js      # CSV file parser
-│   ├── watcher.js        # File system watcher
-│   ├── goals.js          # Goal generation logic
-│   └── db.js             # Database utilities
-├── electron/          # Electron main process
-│   ├── main.js           # Electron entry point
-│   └── index.html        # Setup screen HTML
-└── package.json       # Root package configuration
-```
-
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
