@@ -130,7 +130,7 @@ export default function ChartHost({ title, height = 400, taskName, packId, timef
                     setBestSettings(null);
                 }
             } else {
-                // Build query string with optional pack_id and days
+                // Build query string with optional playlist_id and days
                 const params = new URLSearchParams();
                 if (packId) {
                     params.append('pack_id', packId);

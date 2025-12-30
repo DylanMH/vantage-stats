@@ -32,13 +32,18 @@ async function importPlaylistsAsPacks(playlistsFolder, db) {
                 const playlist = JSON.parse(content);
 
                 // Extract playlist name and scenarios
-                const playlistName = playlist.playlistName || path.basename(file, '.json');
+                const playlistName = (playlist.playlistName || path.basename(file, '.json')).trim();
                 const scenarioList = playlist.scenarioList || [];
 
                 // Extract scenario names from objects (each has scenario_name property)
-                const scenarios = scenarioList.map(item => {
-                    return typeof item === 'string' ? item : item.scenario_name;
-                }).filter(name => name && name.trim());
+                const scenarios = scenarioList
+                    .map(item => {
+                        if (typeof item === 'string') {
+                            return item.trim();
+                        }
+                        return (item.scenario_name || item.scenarioName || '').trim();
+                    })
+                    .filter(name => name.length > 0);
 
                 if (scenarios.length === 0) {
                     console.log(`  ⏭️  Skipping empty playlist: ${playlistName}`);
@@ -46,39 +51,64 @@ async function importPlaylistsAsPacks(playlistsFolder, db) {
                     continue;
                 }
 
-                // Check if pack already exists
+                // Check if playlist already exists by name (case-insensitive)
                 const existing = await db.get(
-                    'SELECT id FROM packs WHERE name = ?',
+                    'SELECT id, name FROM packs WHERE LOWER(TRIM(name)) = LOWER(?)',
                     [playlistName]
                 );
 
                 if (existing) {
-                    console.log(`  ⏭️  Pack already exists: ${playlistName}`);
-                    skipped++;
-                    continue;
+                    // Check if task count matches - if not, update the playlist
+                    const existingTasks = await db.all(
+                        'SELECT task_id FROM pack_tasks WHERE pack_id = ?',
+                        [existing.id]
+                    );
+                    
+                    if (existingTasks.length !== scenarios.length) {
+                        console.log(`  🔄 Updating playlist: ${playlistName} (${existingTasks.length} -> ${scenarios.length} tasks)`);
+                        // Continue to update the playlist
+                    } else {
+                        console.log(`  ⏭️  Playlist already exists: ${playlistName} (${scenarios.length} tasks)`);
+                        skipped++;
+                        continue;
+                    }
                 }
 
-                // Create pack with playlist description and author
+                // Create or update playlist
+                let packId;
                 const description = playlist.description || `Imported from Kovaak's playlist: ${file}`;
                 const author = playlist.authorName ? ` by ${playlist.authorName}` : '';
                 
-                const result = await db.run(`
-                    INSERT INTO packs (name, description, game_focus, created_at)
-                    VALUES (?, ?, ?, datetime('now'))
-                `, [
-                    playlistName,
-                    description + author,
-                    'Kovaak\'s Playlist'
-                ]);
+                if (existing) {
+                    // Update existing playlist
+                    packId = existing.id;
+                    await db.run(`
+                        UPDATE packs 
+                        SET description = ?, game_focus = ?, created_at = datetime('now')
+                        WHERE id = ?
+                    `, [description + author, 'Kovaak\'s Playlist', packId]);
+                    
+                    // Clear existing tasks
+                    await db.run('DELETE FROM pack_tasks WHERE pack_id = ?', [packId]);
+                } else {
+                    // Create new playlist
+                    const result = await db.run(`
+                        INSERT INTO packs (name, description, game_focus, created_at)
+                        VALUES (?, ?, ?, datetime('now'))
+                    `, [
+                        playlistName,
+                        description + author,
+                        'Kovaak\'s Playlist'
+                    ]);
+                    packId = result.lastID;
+                }
 
-                const packId = result.lastID;
-
-                // Add tasks to pack
+                // Add all tasks to playlist
                 let addedTasks = 0;
                 for (const scenarioName of scenarios) {
-                    // Find or create task
+                    // Find or create task (case-insensitive match)
                     let task = await db.get(
-                        'SELECT id FROM tasks WHERE name = ?',
+                        'SELECT id FROM tasks WHERE LOWER(TRIM(name)) = LOWER(?)',
                         [scenarioName]
                     );
 
@@ -91,7 +121,7 @@ async function importPlaylistsAsPacks(playlistsFolder, db) {
                         task = { id: taskResult.lastID };
                     }
 
-                    // Link task to pack
+                    // Link task to playlist
                     await db.run(`
                         INSERT OR IGNORE INTO pack_tasks (pack_id, task_id)
                         VALUES (?, ?)
@@ -100,8 +130,12 @@ async function importPlaylistsAsPacks(playlistsFolder, db) {
                     addedTasks++;
                 }
 
-                console.log(`  ✅ Imported: ${playlistName} (${addedTasks} tasks)`);
-                imported++;
+                if (existing) {
+                    console.log(`  ✅ Updated: ${playlistName} (${addedTasks} tasks)`);
+                } else {
+                    console.log(`  ✅ Imported: ${playlistName} (${addedTasks} tasks)`);
+                    imported++;
+                }
 
             } catch (err) {
                 console.error(`  ❌ Error importing ${file}:`, err.message);

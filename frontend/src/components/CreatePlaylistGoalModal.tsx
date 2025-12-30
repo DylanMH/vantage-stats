@@ -1,35 +1,21 @@
 import { useState, useEffect, useCallback } from "react";
 import { getApiUrl } from "../hooks/useApi";
 
-type Pack = {
-  id: number;
-  name: string;
-  description: string;
-  game_focus: string;
-  task_count: number;
-};
+import type { Playlist, PlaylistStats } from "../types/playlist";
 
-type PackStats = {
-  avg_accuracy: number;
-  avg_score: number;
-  avg_ttk: number;
-  total_runs: number;
-  tasks_played: number;
-};
-
-type CreatePackGoalModalProps = {
+type CreatePlaylistGoalModalProps = {
   onClose: () => void;
   onGoalCreated: () => void;
 };
 
-type Step = "selectPack" | "selectMetrics" | "setTarget" | "setDate";
+type Step = "selectPlaylist" | "selectMetrics" | "setTarget" | "setDate";
 type MetricType = "accuracy" | "score" | "ttk";
 
-export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePackGoalModalProps) {
-  const [step, setStep] = useState<Step>("selectPack");
-  const [packs, setPacks] = useState<Pack[]>([]);
-  const [selectedPack, setSelectedPack] = useState<Pack | null>(null);
-  const [packStats, setPackStats] = useState<PackStats | null>(null);
+export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: CreatePlaylistGoalModalProps) {
+  const [step, setStep] = useState<Step>("selectPlaylist");
+  const [playlists, setPlaylists] = useState<Playlist[]>([]);
+  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
+  const [playlistStats, setPlaylistStats] = useState<PlaylistStats | null>(null);
   const [selectedMetrics, setSelectedMetrics] = useState<MetricType[]>([]);
   const [targetValues, setTargetValues] = useState<Record<MetricType, number>>({
     accuracy: 0,
@@ -42,9 +28,9 @@ export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePa
 
   // Reset all state when modal opens
   const resetState = useCallback(() => {
-    setStep("selectPack");
-    setSelectedPack(null);
-    setPackStats(null);
+    setStep("selectPlaylist");
+    setSelectedPlaylist(null);
+    setPlaylistStats(null);
     setSelectedMetrics([]);
     setTargetValues({ accuracy: 0, score: 0, ttk: 0 });
     setTargetDate("");
@@ -57,43 +43,43 @@ export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePa
     onClose();
   }, [onClose, resetState]);
 
-  // Load packs on mount
+  // Load playlists on mount
   useEffect(() => {
-    const fetchPacks = async () => {
+    const fetchPlaylists = async () => {
       try {
-        const response = await fetch(getApiUrl("/api/packs"));
+        const response = await fetch(getApiUrl("/api/playlists"));
         if (response.ok) {
           const data = await response.json();
-          setPacks(data);
+          setPlaylists(data);
         }
       } catch (err) {
-        console.error("Failed to load packs:", err);
-        setError("Failed to load packs");
+        console.error("Failed to load playlists:", err);
+        setError("Failed to load playlists");
       }
     };
-    fetchPacks();
+    fetchPlaylists();
   }, []);
 
-  // Load pack stats when a pack is selected
+  // Load playlist stats when a playlist is selected
   useEffect(() => {
-    if (selectedPack) {
+    if (selectedPlaylist) {
       const fetchStats = async () => {
         try {
-          const response = await fetch(getApiUrl(`/api/packs/${selectedPack.id}/stats`));
+          const response = await fetch(getApiUrl(`/api/playlists/${selectedPlaylist.id}/stats`));
           if (response.ok) {
             const data = await response.json();
-            setPackStats(data);
+            setPlaylistStats(data);
           }
         } catch (err) {
-          console.error("Failed to load pack stats:", err);
+          console.error("Failed to load playlist stats:", err);
         }
       };
       fetchStats();
     }
-  }, [selectedPack]);
+  }, [selectedPlaylist]);
 
-  const handlePackSelect = (pack: Pack) => {
-    setSelectedPack(pack);
+  const handlePlaylistSelect = (playlist: Playlist) => {
+    setSelectedPlaylist(playlist);
     setStep("selectMetrics");
   };
 
@@ -119,7 +105,7 @@ export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePa
       // Validate target values
       for (const metric of selectedMetrics) {
         const targetVal = targetValues[metric];
-        const currentVal = packStats?.[`avg_${metric}` as keyof PackStats] || 0;
+        const currentVal = playlistStats?.[`avg_${metric}` as keyof PlaylistStats] || 0;
         
         if (!targetVal || targetVal <= 0) {
           setError(`Please set a target value for ${metric}`);
@@ -147,8 +133,8 @@ export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePa
 
   const handleBack = () => {
     if (step === "selectMetrics") {
-      setStep("selectPack");
-      setSelectedPack(null);
+      setStep("selectPlaylist");
+      setSelectedPlaylist(null);
     } else if (step === "setTarget") {
       setStep("selectMetrics");
     } else if (step === "setDate") {
@@ -157,7 +143,7 @@ export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePa
   };
 
   const handleCreate = async () => {
-    if (!selectedPack || selectedMetrics.length === 0) return;
+    if (!selectedPlaylist || selectedMetrics.length === 0) return;
 
     setLoading(true);
     setError("");
@@ -165,8 +151,8 @@ export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePa
     try {
       // Create goals for each selected metric
       for (const metric of selectedMetrics) {
-        const title = `${selectedPack.name} - ${metric.toUpperCase()} Goal`;
-        const currentVal = packStats?.[`avg_${metric}` as keyof PackStats] || 0;
+        const title = `${selectedPlaylist.name} - ${metric.toUpperCase()} Goal`;
+        const currentVal = playlistStats?.[`avg_${metric}` as keyof PlaylistStats] || 0;
         const targetVal = targetValues[metric];
         
         let description;
@@ -184,7 +170,7 @@ export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePa
             description,
             goal_type: metric,
             target_value: targetVal,
-            target_pack_id: selectedPack.id,
+            target_pack_id: selectedPlaylist.id,
             target_date: targetDate || null,
             metrics: selectedMetrics
           })
@@ -216,8 +202,8 @@ export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePa
       <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-white">
-            Create Pack Goal
-            {selectedPack && ` - ${selectedPack.name}`}
+            Create Playlist Goal
+            {selectedPlaylist && ` - ${selectedPlaylist.name}`}
           </h2>
           <button
             onClick={handleClose}
@@ -233,30 +219,30 @@ export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePa
           </div>
         )}
 
-        {/* Step 1: Select Pack */}
-        {step === "selectPack" && (
+        {/* Step 1: Select Playlist */}
+        {step === "selectPlaylist" && (
           <div>
-            <h3 className="text-lg font-semibold text-white mb-4">Select a Pack</h3>
-            {packs.length > 0 ? (
+            <h3 className="text-lg font-semibold text-white mb-4">Select a Playlist</h3>
+            {playlists.length > 0 ? (
               <div className="space-y-2 max-h-96 overflow-y-auto">
-                {packs.map(pack => (
+                {playlists.map(playlist => (
                   <button
-                    key={pack.id}
-                    onClick={() => handlePackSelect(pack)}
+                    key={playlist.id}
+                    onClick={() => handlePlaylistSelect(playlist)}
                     className="w-full text-left bg-theme-tertiary hover:bg-theme-accent hover:bg-opacity-20 border border-theme-primary rounded-lg p-4 transition-colors"
                   >
                     <div className="flex justify-between items-center">
                       <div>
-                        <p className="font-medium text-white">{pack.name}</p>
-                        {pack.description && (
-                          <p className="text-sm text-theme-muted">{pack.description}</p>
+                        <p className="font-medium text-white">{playlist.name}</p>
+                        {playlist.description && (
+                          <p className="text-sm text-theme-muted">{playlist.description}</p>
                         )}
-                        {pack.game_focus && (
-                          <p className="text-xs text-theme-muted mt-1">{pack.game_focus}</p>
+                        {playlist.game_focus && (
+                          <p className="text-xs text-theme-muted mt-1">{playlist.game_focus}</p>
                         )}
                       </div>
                       <div className="text-sm text-theme-muted">
-                        {pack.task_count} tasks
+                        {playlist.task_count} tasks
                       </div>
                     </div>
                   </button>
@@ -264,7 +250,7 @@ export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePa
               </div>
             ) : (
               <div className="bg-theme-tertiary border border-theme-primary rounded-lg p-8 text-center">
-                <p className="text-theme-muted">No packs available. Create a pack first!</p>
+                <p className="text-theme-muted">No playlists available. Create a playlist first!</p>
               </div>
             )}
           </div>
@@ -275,7 +261,7 @@ export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePa
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">Select Metrics to Track</h3>
             <p className="text-sm text-theme-muted mb-4">
-              These metrics will be averaged across all tasks in the pack
+              These metrics will be averaged across all tasks in the playlist
             </p>
             <div className="space-y-4">
               {(["accuracy", "score", "ttk"] as MetricType[]).map(metric => (
@@ -300,9 +286,9 @@ export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePa
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-white capitalize">{metric}</p>
-                      {packStats && (
+                      {playlistStats && (
                         <p className="text-sm text-theme-muted">
-                          Current Avg: {formatStat(packStats[`avg_${metric}` as keyof PackStats], metric)}
+                          Current Avg: {formatStat(playlistStats[`avg_${metric}` as keyof PlaylistStats], metric)}
                         </p>
                       )}
                     </div>
@@ -332,7 +318,7 @@ export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePa
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">Set Target Values</h3>
             <p className="text-sm text-theme-muted mb-4">
-              Set the target average for all tasks in this pack
+              Set the target average for all tasks in this playlist
             </p>
             <div className="space-y-4">
               {selectedMetrics.map(metric => (
@@ -340,9 +326,9 @@ export default function CreatePackGoalModal({ onClose, onGoalCreated }: CreatePa
                   <label className="block text-white font-medium mb-2 capitalize">
                     Average {metric} Goal
                   </label>
-                  {packStats && (
+                  {playlistStats && (
                     <p className="text-sm text-theme-muted mb-3">
-                      Current Avg: {formatStat(packStats[`avg_${metric}` as keyof PackStats], metric)}
+                      Current Avg: {formatStat(playlistStats[`avg_${metric}` as keyof PlaylistStats], metric)}
                     </p>
                   )}
                   <input

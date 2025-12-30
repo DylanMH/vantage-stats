@@ -104,19 +104,25 @@ function startServer(db, port = 3000) {
             `  POST /api/sessions/:id/end - End session\n` +
             `  PUT /api/sessions/:id - Update session\n` +
             `  DELETE /api/sessions/:id - Delete session\n\n` +
-            `Packs:\n` +
-            `  GET /api/packs - Get all packs\n` +
-            `  GET /api/packs/:id/tasks - Get pack tasks\n` +
-            `  GET /api/packs/:packId/stats - Get pack stats\n` +
-            `  POST /api/packs - Create pack\n` +
-            `  DELETE /api/packs/:id - Delete pack\n\n` +
+            `Playlists:\n` +
+            `  GET /api/playlists - Get all playlists\n` +
+            `  GET /api/playlists/:id/tasks - Get playlist tasks\n` +
+            `  GET /api/playlists/:id/stats - Get playlist stats\n` +
+            `  POST /api/playlists - Create playlist (in database)\n` +
+            `  POST /api/playlists/create - Export playlist JSON file\n` +
+            `  DELETE /api/playlists/:id - Delete playlist\n\n` +
             `Settings:\n` +
             `  GET /api/settings - Get settings\n` +
             `  POST /api/settings - Update settings\n` +
             `  POST /api/settings/clear-data - Clear all data\n` +
             `  POST /api/settings/rescan - Rescan stats folder\n\n` +
             `User:\n` +
-            `  GET /api/user/profile - Get user profile\n`
+            `  GET /api/user/profile - Get user profile\n\n` +
+            `Ranked:\n` +
+            `  GET /api/ranked/stats - Get complete ranked stats\n` +
+            `  GET /api/ranked/category/:category - Get category details\n` +
+            `  GET /api/ranked/tasks - Get all ranked tasks\n` +
+            `  POST /api/ranked/calculate-percentile - Calculate percentile for score\n`
         );
     });
 
@@ -130,11 +136,14 @@ function startServer(db, port = 3000) {
     const practiceRoutes = require('../routes/practice')(db);
     const goalsRoutes = require('../routes/goals')(db);
     const sessionsRoutes = require('../routes/sessions')(db);
-    const packsRoutes = require('../routes/packs')(db);
     const settingsRoutes = require('../routes/settings')(db);
     const userRoutes = require('../routes/user')(db);
     const summaryRoutes = require('../routes/summary')(db);
     const comparisonsRoutes = require('../routes/comparisons')(db);
+    const rankedRoutes = require('../routes/ranked')(db);
+    const playlistsRoutes = require('../routes/playlists');
+
+    app.set('db', db);
 
     app.use('/api/runs', runsRoutes);
     app.use('/api/stats', statsRoutes);
@@ -142,11 +151,12 @@ function startServer(db, port = 3000) {
     app.use('/api/practice', practiceRoutes);
     app.use('/api/goals', goalsRoutes);
     app.use('/api/sessions', sessionsRoutes);
-    app.use('/api/packs', packsRoutes);
     app.use('/api/settings', settingsRoutes);
     app.use('/api/user', userRoutes);
     app.use('/api/summary', summaryRoutes);
     app.use('/api/comparisons', comparisonsRoutes);
+    app.use('/api/ranked', rankedRoutes);
+    app.use('/api/playlists', playlistsRoutes);
 
     // Initialize default packs and check for goal generation on startup
     app.listen(port, async () => {

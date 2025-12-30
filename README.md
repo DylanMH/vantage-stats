@@ -13,23 +13,27 @@ A powerful desktop application for tracking, analyzing, and visualizing your FPS
 ## ✨ Features
 
 ### 📊 **Performance Tracking**
+
 - Automatic import of FPS trainer CSV statistics
 - Real-time file watching for instant updates
 - Historical trend analysis with interactive charts
 - Track accuracy, score, TTK (Time to Kill), and more
 
 ### 🎯 **Goal System**
+
 - Auto-generated personalized goals based on your performance
 - Visual progress tracking with completion percentages
 - Smart goal recommendations
 
 ### 📦 **Pack Management**
+
 - Create custom scenario packs
 - Import playlist JSON files as packs
 - Filter stats by pack or individual scenarios
 - Quick-access pack statistics
 
 ### 🎮 **Session Tracking & Comparison**
+
 - Manual session tracking with start/stop controls
 - Name and annotate your training sessions
 - Compare performance between any two time windows:
@@ -41,12 +45,14 @@ A powerful desktop application for tracking, analyzing, and visualizing your FPS
 - Visual diff indicators showing improvement or decline
 
 ### 📈 **Advanced Analytics**
+
 - Moving average smoothing for trend visualization
 - Best performance settings tracking (DPI, sensitivity, FOV)
 - Day-by-day run breakdowns
 - Comprehensive task summaries
 
 ### ⚙️ **Smart Features**
+
 - First-launch setup wizard
 - Manual CSV folder rescanning
 - Settings persistence across sessions
@@ -55,6 +61,7 @@ A powerful desktop application for tracking, analyzing, and visualizing your FPS
 ## 🚀 Quick Start
 
 ### Prerequisites
+
 - Node.js (v16 or higher)
 - npm or yarn
 - FPS Aim Trainer installed (Kovaak's, Aim Lab, etc.)
@@ -62,17 +69,20 @@ A powerful desktop application for tracking, analyzing, and visualizing your FPS
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone https://github.com/yourusername/vantage-stats.git
    cd vantage-stats
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Run in development mode**
+
    ```bash
    # Terminal 1 - Start frontend dev server
    npm run dev
@@ -82,11 +92,13 @@ A powerful desktop application for tracking, analyzing, and visualizing your FPS
    ```
 
 4. **Build for production**
+
    ```bash
    npm run build:start
    ```
 
 5. **Package the application**
+
    ```bash
    npm run dist
    ```
@@ -103,15 +115,11 @@ A powerful desktop application for tracking, analyzing, and visualizing your FPS
    - Double-click the downloaded `.exe` file
 
 3. **⚠️ Windows SmartScreen Warning**
-   
    Windows Defender SmartScreen may block the installer because the app isn't digitally signed (code signing certificates are expensive!).
-   
    **To proceed safely:**
    - Click **"More info"** on the SmartScreen popup
    - Click **"Run anyway"** button
-   
    ![Windows SmartScreen Bypass](https://i.imgur.com/28le4sB.png)
-   
    *The app is safe - it's open source and you can review all the code in this repository. SmartScreen blocks unsigned apps by default to protect users.*
 
 4. **First launch setup**
@@ -126,7 +134,8 @@ If you prefer to build the app yourself, follow the [Installation](#installation
 ## 🖥️ Usage
 
 ### First Launch
-1. Select your FPS trainer stats folder: 
+
+1. Select your FPS trainer stats folder:
    - **Kovaak's**: `%LOCALAPPDATA%/FPSAimTrainer/Saved/SaveGames/Stats`
    - Or: `C:\Users\YourName\AppData\Local\FPSAimTrainer\Saved\SaveGames\Stats`
 
@@ -136,12 +145,14 @@ If you prefer to build the app yourself, follow the [Installation](#installation
 3. The app will automatically scan and import all your CSV files
 
 ### Importing Playlists
+
 1. Go to **Settings** page
 2. Click **"📥 Import Playlist"** button
 3. Select a playlist JSON file from your trainer
 4. The playlist will be imported as a new pack with all scenarios
 
 ### Creating Goals
+
 - **Automatic**: Goals are generated based on your performance
 - **Manual**: Go to Goals page → "Create Custom Goal"
 
@@ -167,6 +178,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 6. Open a Pull Request
 
 ### Code Style
+
 - Follow existing code conventions
 - Use TypeScript for type safety
 - Write descriptive commit messages
@@ -177,6 +189,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 This project is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License - see the [LICENSE](LICENSE) file for details.
 
 **What this means:**
+
 - ✅ Free to use and modify for personal, non-commercial purposes
 - ✅ Must give credit to Vantage Stats
 - ✅ Must share modifications under the same license
@@ -195,11 +208,5 @@ This project is licensed under the Creative Commons Attribution-NonCommercial-Sh
 
 ## 🗺️ Roadmap
 
-- [x] Session tracking and comparison mode
-- [X] Advanced filtering options
-- [ ] Cloud backup/sync (optional)
-- [X] Task specific goals
-
----
-
+- Give me ideas
 **Made with ❤️ for the aim training community**

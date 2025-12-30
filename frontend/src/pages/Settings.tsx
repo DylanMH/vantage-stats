@@ -14,14 +14,7 @@ declare global {
   }
 }
 
-type Pack = {
-  id: number;
-  name: string;
-  description?: string;
-  game_focus?: string;
-  task_count: number;
-  created_at?: string;
-};
+import type { Playlist } from "../types/playlist";
 
 type ToastMessage = {
   message: string;
@@ -42,9 +35,9 @@ export default function Settings() {
   const [appVersion, setAppVersion] = useState<string>('');
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
-    packId: number;
-    packName: string;
-  }>({ isOpen: false, packId: 0, packName: '' });
+    playlistId: number;
+    playlistName: string;
+  }>({ isOpen: false, playlistId: 0, playlistName: '' });
   
   // Load settings on mount
   useEffect(() => {
@@ -281,13 +274,13 @@ export default function Settings() {
     }
   };
 
-  // Pack management state
-  const { data: packs } = useQuery<Pack[]>("packs", "/api/packs");
-  const [showPackCreator, setShowPackCreator] = useState(false);
-  const [packName, setPackName] = useState("");
-  const [packDescription, setPackDescription] = useState("");
-  const [packGame, setPackGame] = useState("");
-  const [packTasks, setPackTasks] = useState("");
+  // Playlist management state
+  const { data: playlists } = useQuery<Playlist[]>("playlists", "/api/playlists");
+  const [showPlaylistCreator, setShowPlaylistCreator] = useState(false);
+  const [playlistName, setPlaylistName] = useState("");
+  const [playlistDescription, setPlaylistDescription] = useState("");
+  const [playlistGame, setPlaylistGame] = useState("");
+  const [playlistTasks, setPlaylistTasks] = useState("");
 
   const openLatestRelease = () => {
     const url = 'https://github.com/DylanMH/vantage-stats/releases/latest';
@@ -303,46 +296,46 @@ export default function Settings() {
     }
   };
 
-  const handleCreatePack = async () => {
-    if (!packName.trim() || !packTasks.trim()) {
-      alert("Please enter a pack name and at least one task");
+  const handleCreatePlaylist = async () => {
+    if (!playlistName.trim() || !playlistTasks.trim()) {
+      alert("Please enter a playlist name and at least one task");
       return;
     }
 
-    const taskList = packTasks.split('\n')
+    const taskList = playlistTasks.split('\n')
       .map(task => task.trim())
       .filter(task => task.length > 0);
 
     try {
-      const response = await fetch(getApiUrl('/api/packs'), {
+      const response = await fetch(getApiUrl('/api/playlists'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: packName.trim(),
-          description: packDescription.trim(),
-          game_focus: packGame.trim() || 'Custom',
+          name: playlistName.trim(),
+          description: playlistDescription.trim(),
+          game_focus: playlistGame.trim() || 'Custom',
           tasks: taskList
         })
       });
 
       if (response.ok) {
-        alert('Pack created successfully!');
-        // Reset form and reload page to show new pack
-        setPackName("");
-        setPackDescription("");
-        setPackGame("");
-        setPackTasks("");
-        setShowPackCreator(false);
+        alert('Playlist created successfully!');
+        // Reset form and reload page to show new playlist
+        setPlaylistName("");
+        setPlaylistDescription("");
+        setPlaylistGame("");
+        setPlaylistTasks("");
+        setShowPlaylistCreator(false);
         window.location.reload();
       } else {
         const error = await response.json();
-        alert('Failed to create pack: ' + error.error);
+        alert('Failed to create playlist: ' + error.error);
       }
     } catch (err) {
       const error = err as Error;
-      alert('Failed to create pack: ' + error.message);
+      alert('Failed to create playlist: ' + error.message);
     }
   };
 
@@ -392,7 +385,7 @@ export default function Settings() {
         }
         
         // Create pack with extracted data
-        const response = await fetch(getApiUrl('/api/packs'), {
+        const response = await fetch(getApiUrl('/api/playlists'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -420,28 +413,28 @@ export default function Settings() {
     }
   };
 
-  const handleDeletePack = (packId: number, packName: string) => {
-    setConfirmDialog({ isOpen: true, packId, packName });
+  const handleDeletePlaylist = (playlistId: number, playlistName: string) => {
+    setConfirmDialog({ isOpen: true, playlistId, playlistName });
   };
 
-  const confirmDeletePack = async () => {
-    const { packId } = confirmDialog;
-    setConfirmDialog({ isOpen: false, packId: 0, packName: '' });
+  const confirmDeletePlaylist = async () => {
+    const { playlistId } = confirmDialog;
+    setConfirmDialog({ isOpen: false, playlistId: 0, playlistName: '' });
 
     try {
-      const response = await fetch(getApiUrl(`/api/packs/${packId}`), {
+      const response = await fetch(getApiUrl(`/api/playlists/${playlistId}`), {
         method: 'DELETE'
       });
 
       if (response.ok) {
-        setToast({ message: 'Pack deleted successfully!', type: 'success' });
+        setToast({ message: 'Playlist deleted successfully!', type: 'success' });
         window.location.reload();
       } else {
-        setToast({ message: 'Failed to delete pack', type: 'error' });
+        setToast({ message: 'Failed to delete playlist', type: 'error' });
       }
     } catch (err) {
       const error = err as Error;
-      setToast({ message: `Failed to delete pack: ${error.message}`, type: 'error' });
+      setToast({ message: `Failed to delete playlist: ${error.message}`, type: 'error' });
     }
   };
 
@@ -557,7 +550,7 @@ export default function Settings() {
               </button>
             </div>
             <p className="text-xs text-theme-muted mt-2">
-              Path to your Kovaaks playlist JSON files folder (used for importing playlists as packs)
+              Path to your Kovaaks playlist JSON files folder (used for importing playlists)
             </p>
           </div>
         </div>
@@ -673,30 +666,30 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* Pack Management */}
+      {/* Playlist Management */}
       <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4 text-white">Pack Management</h2>
+        <h2 className="text-xl font-bold mb-4 text-white">Playlist Management</h2>
         <div className="space-y-4">
-          {packs && packs.length > 0 ? (
-            packs.map(pack => (
-              <div key={pack.id} className="bg-theme-hover border border-theme-secondary rounded-lg p-4">
+          {playlists && playlists.length > 0 ? (
+            playlists.map(playlist => (
+              <div key={playlist.id} className="bg-theme-hover border border-theme-secondary rounded-lg p-4">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-white">{pack.name}</h3>
-                    {pack.description && (
-                      <p className="text-sm text-theme-muted mt-1">{pack.description}</p>
+                    <h3 className="text-lg font-semibold text-white">{playlist.name}</h3>
+                    {playlist.description && (
+                      <p className="text-sm text-theme-muted mt-1">{playlist.description}</p>
                     )}
                     <div className="flex items-center gap-4 mt-2 text-xs text-theme-muted">
-                      {pack.game_focus && (
+                      {playlist.game_focus && (
                         <span className="px-2 py-1 bg-theme-accent/20 text-theme-accent rounded">
-                          {pack.game_focus}
+                          {playlist.game_focus}
                         </span>
                       )}
-                      <span>{pack.task_count} tasks</span>
+                      <span>{playlist.task_count} tasks</span>
                     </div>
                   </div>
                   <button
-                    onClick={() => handleDeletePack(pack.id, pack.name)}
+                    onClick={() => handleDeletePlaylist(playlist.id, playlist.name)}
                     className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-colors"
                   >
                     Delete
@@ -706,7 +699,7 @@ export default function Settings() {
             ))
           ) : (
             <div className="text-center py-8 text-theme-muted">
-              <p>No custom packs yet. Create one below!</p>
+              <p>No custom playlists yet. Create one below!</p>
             </div>
           )}
         </div>
@@ -741,10 +734,10 @@ CONFIRM: Yes, delete everything!
         </div>
       </div>
 
-      {/* Pack Creation */}
+      {/* Playlist Creation */}
       <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-white">Create Custom Pack</h2>
+          <h2 className="text-xl font-bold text-white">Create Custom Playlist</h2>
           <div className="flex gap-2">
             <button
               onClick={handleImportPlaylist}
@@ -755,24 +748,24 @@ CONFIRM: Yes, delete everything!
               📥 Import Playlist
             </button>
             <button
-              onClick={() => setShowPackCreator(!showPackCreator)}
+              onClick={() => setShowPlaylistCreator(!showPlaylistCreator)}
               className="px-4 py-2 bg-theme-accent bg-theme-accent-hover text-white rounded-lg text-sm font-medium transition-colors"
             >
-              {showPackCreator ? 'Cancel' : 'New Pack'}
+              {showPlaylistCreator ? 'Cancel' : 'New Playlist'}
             </button>
           </div>
         </div>
         
-        {showPackCreator && (
+        {showPlaylistCreator && (
           <div className="space-y-4 border-t border-theme-primary pt-4">
             <div>
               <label className="block text-sm font-medium text-theme-muted mb-2">
-                Pack Name *
+                Playlist Name *
               </label>
               <input
                 type="text"
-                value={packName}
-                onChange={(e) => setPackName(e.target.value)}
+                value={playlistName}
+                onChange={(e) => setPlaylistName(e.target.value)}
                 placeholder="e.g., My Valorant Routine"
                 className="w-full px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-theme-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -784,9 +777,9 @@ CONFIRM: Yes, delete everything!
               </label>
               <input
                 type="text"
-                value={packDescription}
-                onChange={(e) => setPackDescription(e.target.value)}
-                placeholder="Optional description of your pack"
+                value={playlistDescription}
+                onChange={(e) => setPlaylistDescription(e.target.value)}
+                placeholder="Optional description of your playlist"
                 className="w-full px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-theme-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -797,8 +790,8 @@ CONFIRM: Yes, delete everything!
               </label>
               <input
                 type="text"
-                value={packGame}
-                onChange={(e) => setPackGame(e.target.value)}
+                value={playlistGame}
+                onChange={(e) => setPlaylistGame(e.target.value)}
                 placeholder="e.g., Valorant, CS:GO, Custom"
                 className="w-full px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-theme-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -809,8 +802,8 @@ CONFIRM: Yes, delete everything!
                 Task Names * (one per line)
               </label>
               <textarea
-                value={packTasks}
-                onChange={(e) => setPackTasks(e.target.value)}
+                value={playlistTasks}
+                onChange={(e) => setPlaylistTasks(e.target.value)}
                 placeholder="Tile Frenzy&#10;1wall6targets TE&#10;Close Strafes&#10;Long Strafes"
                 rows={6}
                 className="w-full px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-theme-primary placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
@@ -822,18 +815,18 @@ CONFIRM: Yes, delete everything!
             
             <div className="flex gap-2">
               <button
-                onClick={handleCreatePack}
+                onClick={handleCreatePlaylist}
                 className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
               >
-                Create Pack
+                Create Playlist
               </button>
               <button
                 onClick={() => {
-                  setShowPackCreator(false);
-                  setPackName("");
-                  setPackDescription("");
-                  setPackGame("");
-                  setPackTasks("");
+                  setShowPlaylistCreator(false);
+                  setPlaylistName("");
+                  setPlaylistDescription("");
+                  setPlaylistGame("");
+                  setPlaylistTasks("");
                 }}
                 className="px-4 py-2 bg-theme-tertiary hover:bg-theme-secondary text-white rounded-lg text-sm font-medium transition-colors"
               >
@@ -881,12 +874,12 @@ CONFIRM: Yes, delete everything!
 
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
-        title="Delete Pack"
-        message={`Are you sure you want to delete "${confirmDialog.packName}"? This cannot be undone.`}
+        title="Delete Playlist"
+        message={`Are you sure you want to delete "${confirmDialog.playlistName}"? This cannot be undone.`}
         confirmText="Delete"
         cancelText="Cancel"
-        onConfirm={confirmDeletePack}
-        onCancel={() => setConfirmDialog({ isOpen: false, packId: 0, packName: '' })}
+        onConfirm={confirmDeletePlaylist}
+        onCancel={() => setConfirmDialog({ isOpen: false, playlistId: 0, playlistName: '' })}
         danger={true}
       />
     </div>

@@ -2,6 +2,132 @@
 
 All notable changes to Vantage Stats will be documented in this file.
 
+## [1.4.0] - 2025-12-29 - THE BIG RANKED UPDATE
+
+### 🏆 Major Features
+
+### 🎯 Ranked System Methodology
+
+#### **How Ranks Are Calculated**
+
+The ranked system uses a percentile-based approach with real-world baseline data:
+
+**Data Collection:**
+
+- Analyzed top Kovaak's leaderboard scores across 36 competitive scenarios
+- Collected percentile cutoffs (0%, 20%, 40%, 60%, 80%, 90%, 97%, 99%, 100%) for each task
+- Organized tasks into 3 categories: Flicking (12 tasks), Tracking (12 tasks), Target Switching (12 tasks)
+- Baseline data stored in `backend/ranked-baselines/baselines.json`
+
+**Score → Percentile Conversion:**
+
+1. User completes a ranked task
+2. Score is compared against baseline cutoff data for that specific task
+3. Linear interpolation calculates exact percentile between adjacent cutoffs
+4. Example: Score between 60th (1000 pts) and 80th (1200 pts) percentile = ~70th percentile
+
+**Category Rating Calculation:**
+
+- Aggregates user's recent 30 runs across all tasks in a category
+- Converts each run's score to percentile using baseline data
+- Computes median percentile as category rating (reduces impact of outliers)
+- Tracks distinct tasks played and total runs for confidence metrics
+- **Provisional until:** ≥10 runs AND ≥3 distinct tasks in category
+
+**Global Rank Calculation:**
+
+- Simple average of the 3 category ratings
+- **Only computed when:** All 3 categories are established (non-provisional)
+- Prevents misleading rank based on incomplete data
+
+**Rank Tiers (8 tiers from Bronze to Champion):**
+
+- **Bronze:** 0-20% (0-600 points)
+- **Silver:** 20-40% (600-1,200 points)
+- **Gold:** 40-60% (1,200-1,800 points)
+- **Platinum:** 60-80% (1,800-2,400 points)
+- **Diamond:** 80-90% (2,400-2,700 points)
+- **Master:** 90-97% (2,700-2,910 points)
+- **Grandmaster:** 97-99% (2,910-2,970 points)
+- **Champion:** 99%+ (2,970-3,000 points)
+
+**Key Features:**
+
+- Fair comparison against real competitive baseline data
+- Category-specific rankings show strengths/weaknesses
+- Median aggregation prevents one lucky/unlucky run from dominating
+- Provisional system ensures ranks are meaningful and earned
+- Visual tier progression with custom gradients and styling
+
+#### **Complete "Pack" → "Playlist" Migration**
+
+- Renamed all "Pack" terminology to "Playlist" throughout the entire application for clarity and consistency
+- Frontend: Updated all UI text, component names, type definitions, and variable names
+- Backend: Consolidated `packs.js` and `playlists.js` routes into unified `playlists.js` API
+- Renamed components:
+  - `PackCreatorModal` → `PlaylistCreatorModal`
+  - `CreatePackGoalModal` → `CreatePlaylistGoalModal`
+- Created centralized `types/playlist.ts` for consistent typing across frontend
+- Updated all pages: Stats, Practice, Settings, Goals, Ranked
+- Backend maintains `packs` table name and API compatibility for existing data
+
+#### **Playlist Sync & Database Integration**
+
+- Fixed playlist creation from Ranked page to immediately sync with database
+- Playlists created via Ranked now appear instantly in Settings, Stats, Practice, and Goals
+- `/api/playlists/create` now creates both:
+  - Kovaak's playlist JSON file (for game integration)
+  - Database entry with linked tasks (for app features)
+- Automatic task creation and linking during playlist generation
+- Case-insensitive duplicate detection
+- Graceful error handling - file creation succeeds even if DB sync fails
+
+#### **Global Rank Calculation Improvements**
+
+- Global rank no longer computes until all 3 category ranks are fully established
+- Prevents misleading provisional global rank based on incomplete data
+- Requirements for global rank:
+  - All 3 categories (Flicking, Tracking, Target Switching) must have ratings
+  - Each category must be non-provisional (≥10 runs, ≥3 distinct tasks)
+- Shows as "Provisional" until all categories meet criteria
+- Provides clearer progression feedback to users
+
+### 🐛 Bug Fixes - Charts
+
+#### **Chart Rendering Fixes**
+
+- Fixed NaN errors in SVG chart elements (`<polyline>` and `<circle>`)
+- Added data validation to filter out NaN, null, undefined, and Infinity values
+- Fixed division by zero when rendering single data point
+- Charts now handle edge cases gracefully:
+  - Single data point centered in view
+  - Invalid data filtered out automatically
+  - Clean SVG attributes with no console errors
+
+### 🔧 Technical Improvements
+
+#### **API Consolidation**
+
+- Merged redundant `/api/packs` endpoints into `/api/playlists`
+- Removed deprecated `backend/routes/packs.js`
+- Cleaner, more maintainable backend route structure
+- Single source of truth for playlist operations
+
+#### **Type Safety & Code Quality**
+
+- Added comprehensive TypeScript types for playlists
+- Fixed type mismatches (number → string conversions for IDs)
+- Removed duplicate type definitions
+- Consistent naming conventions across codebase
+- All ESLint warnings resolved
+
+### 📝 Developer Experience
+
+- Updated import paths for renamed components
+- Consistent variable naming throughout frontend
+- Better code organization and discoverability
+- Reduced cognitive load with unified terminology
+
 ## [1.3.8] - 2025-12-28
 
 ### More Fixes
@@ -107,7 +233,7 @@ All notable changes to Vantage Stats will be documented in this file.
 - Comparison results show static labels (no more duplicate controls)
 - Better spacing between Compare and Close buttons
 
-### 🐛 Bug Fixes
+### 🐛 Bug Fixes - Session Comparison
 
 - Fixed session comparison modal left/right asymmetry issues
 - Fixed overflow of colored indicator bars outside modal card
@@ -120,7 +246,7 @@ All notable changes to Vantage Stats will be documented in this file.
 
 #### **New Backend Structure**
 
-```
+```text
 backend/
 ├── config/          # DB, server, migrations
 ├── core/            # Business logic
@@ -181,7 +307,7 @@ backend/
 - Consistent with app theming and better user experience
 - Shows goal name in confirmation message for clarity
 
-### 🐛 Bug Fixes
+### 🐛 Bug Fixes - Goals
 
 #### **Goal Creation Backend Fix**
 
@@ -192,7 +318,7 @@ backend/
 
 ## [1.3.3] - 2025-12-20
 
-### 🐛 Bug Fixes
+### 🐛 Bug Fixes - Assets
 
 #### **Logo Asset Loading in Production Builds**
 
@@ -230,7 +356,7 @@ backend/
   - Enhanced session dropdown spacing with better padding and visual breathing room
   - Larger, more readable dropdowns with improved color-coded borders
 
-### 🐛 Bug Fixes
+### 🐛 Bug Fixes - Session Switcher
 
 #### **Session Comparison Switcher**
 
@@ -402,7 +528,7 @@ backend/
 - Consistent filtering across all stats endpoints
 - Ensures practice runs don't contaminate main performance metrics
 
-### 🐛 Bug Fixes
+### 🐛 Bug Fixes - UI
 
 - Fixed session indicator not appearing until page reload (now instant via context)
 - Fixed profile page showing empty blue background instead of content
@@ -473,7 +599,7 @@ backend/
 - Goals are created for a specific task and metric (Accuracy / Score / TTK)
 - Avoids duplicates and limits the number of auto-generated task goals to prevent spam
 
-### 🛠️ Bug Fixes
+### 🛠️ Bug Fixes - Timing
 
 #### **Play Time & Session Accuracy**
 
@@ -575,7 +701,7 @@ backend/
 - RESTful endpoint design
 - Enhanced debug logging for comparisons
 
-### 🐛 Bug Fixes
+### 🐛 Bug Fixes - Sessions
 
 - **Session Editing**: Fixed inability to type when editing session names
 - **Session Notes**: Fixed inability to type when editing session notes
@@ -644,7 +770,7 @@ Going forward, version numbers follow semantic versioning:
 
 ## [1.0.1] - Previous Release
 
-### Bug Fixes
+### Bug Fixes - Stability
 
 - Minor stability improvements
 - UI refinements
@@ -667,4 +793,4 @@ Going forward, version numbers follow semantic versioning:
 
 ---
 
-**Made with ❤️ for the aim training community**
+Made with ❤️ for the aim training community

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, getApiUrl } from "../hooks/useApi";
 import CreateTaskGoalModal from "../components/CreateTaskGoalModal";
-import CreatePackGoalModal from "../components/CreatePackGoalModal";
+import CreatePlaylistGoalModal from "../components/CreatePlaylistGoalModal";
 import ConfirmDialog from "../components/ConfirmDialog";
 
 type Goal = {
@@ -16,19 +16,19 @@ type Goal = {
   created_at: string;
   target_task_name?: string;
   target_pack_id?: number;
-  target_pack_name?: string;
+  target_playlist_name?: string;
   target_timeframe?: number;
   target_date?: string;
   is_user_created?: boolean;
 };
 
-type TabType = "overall" | "task" | "pack";
+type TabType = "overall" | "task" | "playlist";
 
 export default function Goals() {
   const [activeTab, setActiveTab] = useState<TabType>("overall");
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [showTaskModal, setShowTaskModal] = useState(false);
-  const [showPackModal, setShowPackModal] = useState(false);
+  const [showPlaylistModal, setShowPlaylistModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     isOpen: boolean;
     goalId: number;
@@ -47,13 +47,13 @@ export default function Goals() {
   // Filter by tab type first
   const tabFilteredGoals = allGoals.filter(goal => {
     if (activeTab === "overall") {
-      // Overall goals are auto-generated and have no task or pack
+      // Overall goals are auto-generated and have no task or playlist
       return !goal.target_task_name && !goal.target_pack_id;
     } else if (activeTab === "task") {
       // Task goals have a target_task_name
       return !!goal.target_task_name;
-    } else if (activeTab === "pack") {
-      // Pack goals have a target_pack_id
+    } else if (activeTab === "playlist") {
+      // Playlist goals have a target_pack_id
       return !!goal.target_pack_id;
     }
     return true;
@@ -70,7 +70,7 @@ export default function Goals() {
     refetchActive();
     refetchCompleted();
     setShowTaskModal(false);
-    setShowPackModal(false);
+    setShowPlaylistModal(false);
   };
 
   const handleDeleteGoal = (goalId: number, goalTitle: string) => {
@@ -225,25 +225,25 @@ export default function Goals() {
             Task Goals
           </button>
           <button
-            onClick={() => setActiveTab("pack")}
+            onClick={() => setActiveTab("playlist")}
             className={`px-6 py-3 rounded-lg font-medium transition-all ${
-              activeTab === "pack"
+              activeTab === "playlist"
                 ? "bg-theme-accent text-white shadow-lg"
                 : "bg-theme-tertiary text-theme-muted hover:text-white"
             }`}
           >
-            Pack Goals
+            Playlist Goals
           </button>
         </div>
 
         {/* Add Goal Button */}
-        {(activeTab === "task" || activeTab === "pack") && (
+        {(activeTab === "task" || activeTab === "playlist") && (
           <div className="mt-4">
             <button
-              onClick={() => activeTab === "task" ? setShowTaskModal(true) : setShowPackModal(true)}
+              onClick={() => activeTab === "task" ? setShowTaskModal(true) : setShowPlaylistModal(true)}
               className="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-medium rounded-lg transition-colors"
             >
-              + Create {activeTab === "task" ? "Task" : "Pack"} Goal
+              + Create {activeTab === "task" ? "Task" : "Playlist"} Goal
             </button>
           </div>
         )}
@@ -301,8 +301,8 @@ export default function Goals() {
                     {goal.target_task_name && (
                       <span>Task: {goal.target_task_name}</span>
                     )}
-                    {goal.target_pack_name && (
-                      <span>Pack: {goal.target_pack_name}</span>
+                    {goal.target_playlist_name && (
+                      <span>Playlist: {goal.target_playlist_name}</span>
                     )}
                     {goal.target_date && (
                       <span>Target: {formatDate(goal.target_date)}</span>
@@ -362,12 +362,12 @@ export default function Goals() {
             <h3 className="text-lg font-semibold text-white mb-2">
               {activeTab === "overall" ? "No Overall Goals" :
                activeTab === "task" ? "No Task Goals" :
-               "No Pack Goals"}
+               "No Playlist Goals"}
             </h3>
             <p className="text-theme-muted text-sm">
               {activeTab === "overall" ? "Play some games to unlock your first goals!" :
                activeTab === "task" ? "Create your first task-specific goal!" :
-               "Create your first pack-specific goal!"}
+               "Create your first playlist-specific goal!"}
             </p>
           </div>
         )}
@@ -380,9 +380,9 @@ export default function Goals() {
           onGoalCreated={handleGoalCreated}
         />
       )}
-      {showPackModal && (
-        <CreatePackGoalModal
-          onClose={() => setShowPackModal(false)}
+      {showPlaylistModal && (
+        <CreatePlaylistGoalModal
+          onClose={() => setShowPlaylistModal(false)}
           onGoalCreated={handleGoalCreated}
         />
       )}

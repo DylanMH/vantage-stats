@@ -61,6 +61,9 @@ export default function Nav() {
                     <Link to="/practice" className={getNavLinkClass("/practice")}>
                         Practice
                     </Link>
+                    <Link to="/ranked" className={getNavLinkClass("/ranked")}>
+                        Ranked
+                    </Link>
                     <Link to="/sessions" className={getNavLinkClass("/sessions")}>
                         Sessions
                     </Link>

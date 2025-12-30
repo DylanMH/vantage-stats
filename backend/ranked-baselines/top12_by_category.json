@@ -1,0 +1,260 @@
+{
+  "Flicking": [
+    {
+      "scenarioName": "1wall 6targets small",
+      "leaderboardId": 2,
+      "aimType": null,
+      "entries": 951725,
+      "plays": 57404394
+    },
+    {
+      "scenarioName": "1wall6targets TE",
+      "leaderboardId": 10420,
+      "aimType": "Clicking",
+      "entries": 662113,
+      "plays": 19753336
+    },
+    {
+      "scenarioName": "1wall2targets_smallflicks 60s",
+      "leaderboardId": 7,
+      "aimType": "Clicking",
+      "entries": 587097,
+      "plays": 14533842
+    },
+    {
+      "scenarioName": "Tile Frenzy",
+      "leaderboardId": 11,
+      "aimType": null,
+      "entries": 569446,
+      "plays": 17509173
+    },
+    {
+      "scenarioName": "Wide Wall 3 Targets",
+      "leaderboardId": 337,
+      "aimType": "Clicking",
+      "entries": 493174,
+      "plays": 4927991
+    },
+    {
+      "scenarioName": "5 Sphere Hipfire Small",
+      "leaderboardId": 125,
+      "aimType": "Clicking",
+      "entries": 452567,
+      "plays": 7663570
+    },
+    {
+      "scenarioName": "Tile Frenzy Mini",
+      "leaderboardId": 67,
+      "aimType": null,
+      "entries": 407160,
+      "plays": 11741682
+    },
+    {
+      "scenarioName": "Valorant One Taps",
+      "leaderboardId": 129,
+      "aimType": null,
+      "entries": 392631,
+      "plays": 6292940
+    },
+    {
+      "scenarioName": "Flux Valorant Reflex Flick",
+      "leaderboardId": 4043,
+      "aimType": null,
+      "entries": 342989,
+      "plays": 2419643
+    },
+    {
+      "scenarioName": "1wall5targets_pasu Reload",
+      "leaderboardId": 43,
+      "aimType": "Clicking",
+      "entries": 341180,
+      "plays": 3831906
+    },
+    {
+      "scenarioName": "Tamspeed 2bpes",
+      "leaderboardId": 340,
+      "aimType": "Clicking",
+      "entries": 325952,
+      "plays": 5695088
+    },
+    {
+      "scenarioName": "Wide Wall 4 Targets Small",
+      "leaderboardId": 339,
+      "aimType": "Clicking",
+      "entries": 308109,
+      "plays": 2220654
+    }
+  ],
+  "Tracking": [
+    {
+      "scenarioName": "Smoothness Training 60",
+      "leaderboardId": 2803,
+      "aimType": null,
+      "entries": 700191,
+      "plays": 5293488
+    },
+    {
+      "scenarioName": "Centering I 180",
+      "leaderboardId": 718,
+      "aimType": "Tracking",
+      "entries": 600987,
+      "plays": 5669875
+    },
+    {
+      "scenarioName": "Consecutive Tracking",
+      "leaderboardId": 2215,
+      "aimType": null,
+      "entries": 478545,
+      "plays": 8839416
+    },
+    {
+      "scenarioName": "Narrow Strafe",
+      "leaderboardId": 233,
+      "aimType": "Tracking",
+      "entries": 382841,
+      "plays": 5519252
+    },
+    {
+      "scenarioName": "Ascended Tracking v3",
+      "leaderboardId": 14,
+      "aimType": null,
+      "entries": 356758,
+      "plays": 6396448
+    },
+    {
+      "scenarioName": "Cata IC Long Strafes",
+      "leaderboardId": 4,
+      "aimType": null,
+      "entries": 335420,
+      "plays": 7784364
+    },
+    {
+      "scenarioName": "Thin Aiming Long",
+      "leaderboardId": 21,
+      "aimType": null,
+      "entries": 327231,
+      "plays": 3971365
+    },
+    {
+      "scenarioName": "Close Long Strafes Easy",
+      "leaderboardId": 12558,
+      "aimType": "Tracking",
+      "entries": 306649,
+      "plays": 2216247
+    },
+    {
+      "scenarioName": "Smoothness Trainer Robot",
+      "leaderboardId": 12640,
+      "aimType": "Tracking",
+      "entries": 306173,
+      "plays": 2141837
+    },
+    {
+      "scenarioName": "Thin Aiming long slow invincible",
+      "leaderboardId": 1222,
+      "aimType": "Tracking",
+      "entries": 269895,
+      "plays": 1719201
+    },
+    {
+      "scenarioName": "VT Smoothbot Novice",
+      "leaderboardId": 24967,
+      "aimType": "Tracking",
+      "entries": 251673,
+      "plays": 3414264
+    },
+    {
+      "scenarioName": "air far long strafes %70",
+      "leaderboardId": 7125,
+      "aimType": null,
+      "entries": 247528,
+      "plays": 1528705
+    }
+  ],
+  "Target Switching": [
+    {
+      "scenarioName": "Flip off Flick Random",
+      "leaderboardId": 5,
+      "aimType": "Target Switching",
+      "entries": 368805,
+      "plays": 3523617
+    },
+    {
+      "scenarioName": "Piano Tiles I 50% SLOW",
+      "leaderboardId": 32364,
+      "aimType": "Target Switching",
+      "entries": 352366,
+      "plays": 22255656
+    },
+    {
+      "scenarioName": "voxTS Viscose Varied",
+      "leaderboardId": 417,
+      "aimType": "Target Switching",
+      "entries": 328244,
+      "plays": 3658382
+    },
+    {
+      "scenarioName": "VT skyTS Novice",
+      "leaderboardId": 24971,
+      "aimType": "Target Switching",
+      "entries": 292156,
+      "plays": 6795322
+    },
+    {
+      "scenarioName": "Skeet Tracking",
+      "leaderboardId": 145,
+      "aimType": "Target Switching",
+      "entries": 268469,
+      "plays": 9323865
+    },
+    {
+      "scenarioName": "voxTargetSwitch 250%",
+      "leaderboardId": 188,
+      "aimType": null,
+      "entries": 223541,
+      "plays": 1861048
+    },
+    {
+      "scenarioName": "iiTzTimmy - Smoothbot Switch Robots",
+      "leaderboardId": 30442,
+      "aimType": "Target Switching",
+      "entries": 191127,
+      "plays": 1396034
+    },
+    {
+      "scenarioName": "devTS Goated NR Static Small",
+      "leaderboardId": 1633,
+      "aimType": null,
+      "entries": 184529,
+      "plays": 6200023
+    },
+    {
+      "scenarioName": "ValTargetSwitch",
+      "leaderboardId": 2529,
+      "aimType": null,
+      "entries": 179532,
+      "plays": 1140454
+    },
+    {
+      "scenarioName": "Target Switching 360 Static",
+      "leaderboardId": 243,
+      "aimType": "Target Switching",
+      "entries": 175351,
+      "plays": 2261862
+    },
+    {
+      "scenarioName": "Smoothbot Switch Robots",
+      "leaderboardId": 12918,
+      "aimType": "Target Switching",
+      "entries": 168868,
+      "plays": 1563003
+    },
+    {
+      "scenarioName": "VT psalmTS Novice",
+      "leaderboardId": 24979,
+      "aimType": "Target Switching",
+      "entries": 167419,
+      "plays": 1724448
+    }
+  ]
+}

@@ -6,6 +6,7 @@ import Goals from "./pages/Goals";
 import Sessions from "./pages/Sessions";
 import Settings from "./pages/Settings";
 import Practice from "./pages/Practice";
+import Ranked from "./pages/Ranked";
 import { ThemeProvider } from "./contexts/ThemeContext.tsx";
 import { PracticeModeProvider } from "./contexts/PracticeModeContext";
 import { SessionProvider } from "./contexts/SessionContext";
@@ -36,6 +37,7 @@ function AppContent() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/stats" element={<Stats />} />
           <Route path="/practice" element={<Practice />} />
+          <Route path="/ranked" element={<Ranked />} />
           <Route path="/goals" element={<Goals />} />
           <Route path="/sessions" element={<Sessions />} />
           <Route path="/settings" element={<Settings />} />

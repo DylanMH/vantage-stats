@@ -3,6 +3,7 @@ import ChartHost from "../components/ChartHost";
 import TasksTable, { type TaskRow } from "../components/TasksTable";
 import { useQuery } from "../hooks/useApi";
 import { usePracticeMode } from "../hooks/usePracticeMode";
+import type { Playlist } from "../types/playlist";
 
 const formatDuration = (seconds: number) => {
   const hours = Math.floor(seconds / 3600);
@@ -11,12 +12,6 @@ const formatDuration = (seconds: number) => {
     return `${hours}h ${minutes}m`;
   }
   return `${minutes}m`;
-};
-
-type Pack = {
-  id: number;
-  name: string;
-  game_focus?: string;
 };
 
 type RawTask = {
@@ -38,7 +33,7 @@ type RawTask = {
 export default function Practice() {
   const { isPracticeMode, togglePracticeMode, isLoading } = usePracticeMode();
   const [selectedTask, setSelectedTask] = useState("all");
-  const [selectedPack, setSelectedPack] = useState("all");
+  const [selectedPlaylist, setSelectedPlaylist] = useState<number | null>(null);
   const [timeframe, setTimeframe] = useState("overall");
 
   const getTimeframeDays = () => {
@@ -53,8 +48,9 @@ export default function Practice() {
 
   const tasksUrl = useMemo(() => {
     const params = new URLSearchParams();
-    if (selectedPack && selectedPack !== "all") {
-      params.append('pack_id', selectedPack);
+    
+    if (selectedPlaylist !== null) {
+      params.append('pack_id', selectedPlaylist.toString());
     }
     
     const days = getTimeframeDays();
@@ -65,10 +61,10 @@ export default function Practice() {
     const queryString = params.toString();
     return queryString ? `/api/practice/tasks/summary?${queryString}` : "/api/practice/tasks/summary";
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPack, timeframe]);
+  }, [selectedPlaylist, timeframe]);
 
   const { data: tasksRaw } = useQuery<RawTask[]>("practiceTasksSummary", tasksUrl, { refetchInterval: 5000 });
-  const { data: packs } = useQuery<Pack[]>("packs", "/api/packs");
+  const { data: playlists } = useQuery<Playlist[]>("playlists", "/api/playlists");
 
   const tasks: TaskRow[] = useMemo(() => {
     const src = tasksRaw ?? [];
@@ -103,14 +99,14 @@ export default function Practice() {
     const params = new URLSearchParams();
     const days = getTimeframeDays();
     if (days !== null) params.append('days', days.toString());
-    if (selectedPack && selectedPack !== "all") params.append('pack_id', selectedPack);
+    if (selectedPlaylist !== null) params.append('pack_id', selectedPlaylist.toString());
     if (selectedTask && selectedTask !== "all") params.append('task', selectedTask);
     const queryString = params.toString();
     return queryString ? `/api/practice/stats?${queryString}` : "/api/practice/stats";
   })();
 
-  const taskNamesUrl = selectedPack && selectedPack !== "all" 
-    ? `/api/tasks/names?pack_id=${selectedPack}`
+  const taskNamesUrl = selectedPlaylist !== null 
+    ? `/api/tasks/names?pack_id=${selectedPlaylist}`
     : "/api/tasks/names";
   const { data: taskNames } = useQuery<string[]>("taskNames", taskNamesUrl);
   const { data: globalStats } = useQuery<Record<string, number>>("practiceGlobalStats", globalStatsUrl);
@@ -175,16 +171,16 @@ export default function Practice() {
           
           <div>
             <label className="block text-sm font-medium text-theme-muted mb-2">
-              Pack
+              Playlist
             </label>
             <select
-              value={selectedPack}
-              onChange={(e) => setSelectedPack(e.target.value)}
+              value={selectedPlaylist ?? ""}
+              onChange={(e) => setSelectedPlaylist(e.target.value ? Number(e.target.value) : null)}
               className="w-full px-3 py-2 bg-theme-tertiary border border-theme-secondary rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-theme-accent"
             >
-              <option value="all">All Packs</option>
-              {packs?.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
+              <option value="">All Playlists</option>
+              {playlists?.map(playlist => (
+                <option key={playlist.id} value={playlist.id}>{playlist.name}</option>
               ))}
             </select>
           </div>
@@ -206,12 +202,12 @@ export default function Practice() {
           </div>
         </div>
         
-        {(selectedTask !== "all" || selectedPack !== "all" || timeframe !== "overall") && (
+        {(selectedTask !== "all" || selectedPlaylist !== null || timeframe !== "overall") && (
           <div className="mt-4 pt-4 border-t border-theme-primary">
             <button
               onClick={() => {
                 setSelectedTask("all");
-                setSelectedPack("all");
+                setSelectedPlaylist(null);
                 setTimeframe("overall");
               }}
               className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm font-medium transition-colors"
@@ -228,8 +224,8 @@ export default function Practice() {
           Practice Statistics
           {selectedTask && selectedTask !== "all" 
             ? ` - ${selectedTask}` 
-            : selectedPack && selectedPack !== "all"
-            ? ` - ${packs?.find(p => p.id === Number(selectedPack))?.name || 'Selected Pack'}`
+            : selectedPlaylist !== null
+            ? ` - ${playlists?.find((p: Playlist) => p.id === selectedPlaylist)?.name || 'Selected Playlist'}`
             : ""
           }
         </h2>
@@ -287,7 +283,7 @@ export default function Practice() {
           title={selectedTask && selectedTask !== "all" ? `Practice Runs - ${selectedTask}` : "Practice Performance Trends"}
           height={selectedTask && selectedTask !== "all" ? 500 : 550}
           taskName={selectedTask && selectedTask !== "all" ? selectedTask : undefined}
-          packId={selectedPack && selectedPack !== "all" ? selectedPack : undefined}
+          packId={selectedPlaylist !== null ? String(selectedPlaylist) : undefined}
           timeframe={timeframe}
           isPractice={true}
         />

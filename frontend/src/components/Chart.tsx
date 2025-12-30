@@ -13,8 +13,13 @@ export default function Chart({ data, color, label, inverted = false, onPointCli
 
     if (data.length === 0) return null;
 
+    // Filter out invalid data points (NaN, null, undefined)
+    const validData = data.filter(d => typeof d.value === 'number' && !isNaN(d.value) && isFinite(d.value));
+    
+    if (validData.length === 0) return null;
+
     // Reverse data so oldest is on the left, newest on the right
-    const reversedData = [...data].reverse();
+    const reversedData = [...validData].reverse();
 
     const values = reversedData.map(d => d.value);
     const maxValue = Math.max(...values);
@@ -22,7 +27,8 @@ export default function Chart({ data, color, label, inverted = false, onPointCli
     const range = maxValue - minValue || 1;
 
     const points = reversedData.map((d, i) => {
-        const x = (i / (reversedData.length - 1)) * 400;
+        // Handle single data point case - place it in the middle
+        const x = reversedData.length === 1 ? 200 : (i / (reversedData.length - 1)) * 400;
         const normalizedValue = (d.value - minValue) / range;
         const y = inverted ? normalizedValue * 100 : 100 - normalizedValue * 100;
         return { x, y, value: d.value, date: d.date };
