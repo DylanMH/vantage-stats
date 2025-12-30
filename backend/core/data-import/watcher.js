@@ -9,6 +9,8 @@ const { hashFile } = require('../../utils/hash');
 const goals = require('../goals/goals');
 const { getSetting, setSetting, getSettingBoolean } = require('../../services/settings');
 const events = require('../../utils/events');
+const { isRankedTask, scoreToPercentile, aggregateCategoryRating } = require('../../utils/ranked');
+const { updateCategoryProgress } = require('../../utils/rankedProgress');
 
 function deriveMetrics(parsed) {
     const out = { ...parsed };
@@ -112,6 +114,61 @@ async function upsertRun(db, file) {
             };
             
             await goals.updateGoalProgress(db, runData);
+            
+            // Update ranked progress if this is a ranked task
+            const rankedTaskData = isRankedTask(taskName);
+            if (rankedTaskData && parsed.score !== null && parsed.score !== undefined) {
+                try {
+                    const category = rankedTaskData.category;
+                    const lastRunPercentile = scoreToPercentile(rankedTaskData.leaderboardId, parsed.score);
+                    
+                    if (lastRunPercentile !== null) {
+                        const categoryRating = await aggregateCategoryRating(db, category, 30);
+                        
+                        if (categoryRating.rating !== null && !categoryRating.isProvisional) {
+                            const baselines = require('../../utils/ranked').loadBaselines();
+                            const categoryTasks = Object.values(baselines.tasks)
+                                .filter(t => t.category === category);
+                            const taskNames = categoryTasks.map(t => t.scenarioName);
+                            const namePlaceholders = taskNames.map(() => '?').join(',');
+                            
+                            const recentRuns = await db.all(`
+                                SELECT r.score, t.name
+                                FROM runs r
+                                JOIN tasks t ON r.task_id = t.id
+                                WHERE t.name IN (${namePlaceholders})
+                                  AND r.is_practice = 0
+                                  AND r.score IS NOT NULL
+                                ORDER BY r.played_at DESC
+                                LIMIT 30
+                            `, taskNames);
+                            
+                            const recentPercentiles = [];
+                            for (const run of recentRuns) {
+                                const taskData = categoryTasks.find(t => t.scenarioName === run.name);
+                                if (taskData) {
+                                    const pct = scoreToPercentile(taskData.leaderboardId, run.score);
+                                    if (pct !== null) recentPercentiles.push(pct);
+                                }
+                            }
+                            
+                            const tierInfo = require('../../utils/ranked').getRankTier(categoryRating.rating);
+                            
+                            await updateCategoryProgress({
+                                db,
+                                category,
+                                skillTier: tierInfo.tier,
+                                skillPercentile: categoryRating.rating,
+                                recentPercentiles,
+                                lastRunPercentile,
+                                distinctTasks: categoryRating.distinctTasks
+                            });
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error updating ranked progress:', err);
+                }
+            }
         }
     }
 

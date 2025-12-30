@@ -144,16 +144,20 @@ export default function Ranked() {
           </h3>
           <div className="space-y-3 text-sm" style={{ color: 'var(--color-text-secondary)' }}>
             <div>
-              <strong style={{ color: 'var(--color-text-primary)' }}>Rating Points:</strong>
-              {' '}Your performance is converted to rating points (0-3,000). Higher scores earn more points, with ratings calculated from global leaderboard percentiles.
+              <strong style={{ color: 'var(--color-text-primary)' }}>Actual Rank (Skill):</strong>
+              {' '}Your rank tier is based on your median percentile from your last 30 runs in each category. This is the truthful measure of your current skill level.
             </div>
             <div>
-              <strong style={{ color: 'var(--color-text-primary)' }}>Category Ratings:</strong>
-              {' '}We take the median of your last 30 ranked runs in each category (Flicking, Tracking, Target Switching) to calculate your category rating.
+              <strong style={{ color: 'var(--color-text-primary)' }}>Tier XP (Progress):</strong>
+              {' '}Earn XP for every run to fill your tier progress bar. Strong performances and improvement grant bonus XP. XP rewards grinding and growth but is anchored to your actual skill—you can't skip tiers with XP alone.
+            </div>
+            <div>
+              <strong style={{ color: 'var(--color-text-primary)' }}>Rating Points:</strong>
+              {' '}Your skill percentile is converted to rating points (0-3,000) for precise tracking within each tier.
             </div>
             <div>
               <strong style={{ color: 'var(--color-text-primary)' }}>Overall Rank:</strong>
-              {' '}Your overall rank is the average of your three category ratings.
+              {' '}Your overall rank is the average of your three category skill ratings (not XP).
             </div>
             <div>
               <strong style={{ color: 'var(--color-text-primary)' }}>Requirements:</strong>
@@ -161,7 +165,7 @@ export default function Ranked() {
             </div>
             <div>
               <strong style={{ color: 'var(--color-text-primary)' }}>Practice Mode:</strong>
-              {' '}Only runs played when practice mode is OFF count toward your rank. Runs in practice mode are excluded.
+              {' '}Only runs played when practice mode is OFF count toward your rank and XP. Runs in practice mode are excluded.
             </div>
           </div>
         </div>

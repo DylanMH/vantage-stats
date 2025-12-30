@@ -181,6 +181,19 @@ function initDb(dbPath) {
       )
     `);
 
+        // Ranked category progress - XP/progress tracking per category
+        db.run(`
+      CREATE TABLE IF NOT EXISTS ranked_category_progress (
+        category TEXT PRIMARY KEY,
+        xp INTEGER NOT NULL DEFAULT 0,
+        progress_points INTEGER NOT NULL DEFAULT 0,
+        last_updated_at TEXT,
+        last_run_at TEXT,
+        runs_count INTEGER NOT NULL DEFAULT 0,
+        distinct_tasks_count INTEGER NOT NULL DEFAULT 0
+      )
+    `);
+
         // Create indexes for performance
         db.run(`CREATE UNIQUE INDEX IF NOT EXISTS runs_hash_idx ON runs(hash)`);
         db.run(`CREATE INDEX IF NOT EXISTS runs_task_time_idx ON runs(task_id, played_at)`);

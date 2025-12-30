@@ -2,6 +2,61 @@
 
 All notable changes to Vantage Stats will be documented in this file.
 
+## [1.4.1] - 2025-12-30
+
+### 🎮 Ranked System: Progress & Rewards
+
+#### **Tier XP System**
+
+- Added rewarding progress/XP system that works alongside truthful skill ranking
+- Players earn XP for every ranked run that fills a tier progress bar (0-1000 XP per tier)
+- XP calculation factors in:
+  - **Base XP:** 4 points per run
+  - **Improvement Bonus:** Up to +20 XP for strong performances vs recent baseline
+  - **Tier Multipliers:** Higher tiers gain XP slower (Bronze 1.0x → Champion 0.5x)
+- XP system is **anchored** to actual skill to prevent tier inflation
+- Progress bar can overflow (1000-1200) to show "🔥 On a heater" indicator while keeping tier label accurate
+- Displayed tier always matches actual skill tier (no fake promotions)
+
+#### **Category Progress Tracking**
+
+- New `ranked_category_progress` database table persists XP/progress per category
+- Progress updates automatically when completing ranked runs (non-practice only)
+- Progress points use rubberband anchoring toward skill points to prevent drift
+- Tracks runs count and distinct tasks count per category
+
+#### **Enhanced Ranked UI**
+
+- **Skill Points Display:** Now shows points needed to reach next tier (e.g., "452 to next") instead of max 3000
+- **Progress Bar:** Visual tier XP bar below skill points with overflow visualization
+- **Recent Runs:** Each run now displays "+X XP" indicator showing contribution to progress bar
+- **Updated Labels:** Clear distinction between "Skill Points (Actual Rank)" and "Tier XP"
+- **Improved Meters:** Progress bar shows current points on left, tier max on right
+- **"How Ranked Works":** Updated explanation clarifying dual system (skill vs XP)
+
+#### **Backend Architecture**
+
+- Created `backend/utils/rankedProgress.js` with progress calculation engine
+- `computeRunXpGain()`: Calculates XP with improvement detection and tier scaling
+- `updateCategoryProgress()`: Updates progress with anchoring logic after each run
+- Enhanced `/api/ranked/recent-runs` to calculate XP gain per run with context
+- Progress updates integrated into watcher (automatic on new ranked runs)
+
+#### **Testing & Validation**
+
+- Added test script (`backend/scripts/test-progress-system.js`) validating XP calculations
+- Added DB schema verification script (`backend/scripts/verify-db-schema.js`)
+- All XP math verified: base XP, improvement bonuses, tier multipliers, anchoring
+
+### 🎨 UI/UX Improvements
+
+- PointsMeter refactored to show progress within current tier (not 0-3000)
+- Added green "+X XP" badges to recent run cards
+- Tier progress bar with smooth animations and overflow styling
+- Consistent visual hierarchy separating skill rank from progress rewards
+
+---
+
 ## [1.4.0] - 2025-12-29 - THE BIG RANKED UPDATE
 
 ### 🏆 Major Features

@@ -6,6 +6,7 @@ backend/node_modules/
 # Database
 backend/kovaaks.db
 backend/kovaaks.db-journal
+backend/scripts
 
 # Build output
 frontend/dist/

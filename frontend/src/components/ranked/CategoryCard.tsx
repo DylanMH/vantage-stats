@@ -3,6 +3,7 @@ import type { CategoryStats, RecentRun } from "../../types/ranked";
 import { RankBadge } from "./RankBadge";
 import { PointsMeter } from "./PointsMeter";
 import { RecentRunCard } from "./RecentRunCard";
+import { ProgressBar } from "./ProgressBar";
 
 export function CategoryCard({ 
   category, 
@@ -55,7 +56,20 @@ export function CategoryCard({
       {stats.rating !== null ? (
         <>
           {!stats.isProvisional && stats.points !== null && (
-            <PointsMeter points={stats.points} tier={stats.tier} />
+            <div className="space-y-4">
+              <div>
+                <div className="text-xs font-medium mb-1" style={{ color: 'var(--color-text-tertiary)' }}>
+                  Skill Points (Actual Rank)
+                </div>
+                <PointsMeter points={stats.points} tier={stats.tier} />
+              </div>
+              
+              {stats.progress && (
+                <div>
+                  <ProgressBar progress={stats.progress} tier={stats.tier} />
+                </div>
+              )}
+            </div>
           )}
           
           <div className="grid grid-cols-2 gap-4 mt-6">

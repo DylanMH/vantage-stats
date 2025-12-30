@@ -43,9 +43,22 @@ export function RecentRunCard({ run }: { run: RecentRun }) {
           >
             {run.tier.tier}
           </span>
-          <span className="text-xs font-semibold" style={{ color: run.tier.color }}>
-            +{run.points}
-          </span>
+          <div className="flex items-center gap-2">
+            {run.xpGain !== undefined && run.xpGain > 0 && (
+              <span 
+                className="text-xs font-semibold px-2 py-1 rounded"
+                style={{ 
+                  backgroundColor: 'rgba(34, 197, 94, 0.2)',
+                  color: '#22c55e'
+                }}
+              >
+                +{run.xpGain} XP
+              </span>
+            )}
+            <span className="text-xs font-semibold" style={{ color: run.tier.color }}>
+              {run.points}
+            </span>
+          </div>
         </div>
       )}
     </div>

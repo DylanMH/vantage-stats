@@ -3,6 +3,18 @@ export type Tier = {
   color: string;
   gradient: string;
   textColor: string;
+  minPoints: number;
+  maxPoints: number;
+};
+
+export type ProgressData = {
+  xp: number;
+  xpMax: number;
+  overflowMax: number;
+  xpGainLastRun: number;
+  progressPoints: number;
+  progressTierDisplay: string;
+  isOverflow: boolean;
 };
 
 export type CategoryStats = {
@@ -13,6 +25,7 @@ export type CategoryStats = {
   totalRuns: number;
   isProvisional: boolean;
   tier: Tier;
+  progress?: ProgressData;
 };
 
 export type RankedStats = {
@@ -39,6 +52,7 @@ export type RecentRun = {
   points: number | null;
   tier: Tier | null;
   leaderboardId: number | null;
+  xpGain?: number;
 };
 
 export type RankTierInfo = {

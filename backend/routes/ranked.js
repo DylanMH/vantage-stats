@@ -30,6 +30,10 @@ const {
     loadBaselines,
     loadTop12
 } = require('../utils/ranked');
+const {
+    getProgressDisplayData,
+    computeRunXpGain
+} = require('../utils/rankedProgress');
 
 module.exports = (db) => {
     /**
@@ -64,9 +68,12 @@ module.exports = (db) => {
                 categories: {}
             };
             
-            // Add tier info and points for each category
+            // Add tier info, points, and progress for each category
             for (const category of categories) {
                 const catData = categoryRatings[category];
+                const tierInfo = getRankTier(catData.rating);
+                const progressData = await getProgressDisplayData(db, category, tierInfo.tier);
+                
                 response.categories[category] = {
                     rating: catData.rating,
                     percentile: catData.rating,
@@ -74,7 +81,8 @@ module.exports = (db) => {
                     distinctTasks: catData.distinctTasks,
                     totalRuns: catData.totalRuns,
                     isProvisional: catData.isProvisional,
-                    tier: getRankTier(catData.rating)
+                    tier: tierInfo,
+                    progress: progressData
                 };
             }
             
@@ -170,6 +178,9 @@ module.exports = (db) => {
                 .sort((a, b) => b.avgPercentile - a.avgPercentile)
                 .slice(0, 5);
             
+            const tierInfo = getRankTier(rating.rating);
+            const progressData = await getProgressDisplayData(db, category, tierInfo.tier);
+            
             res.json({
                 category,
                 rating: rating.rating,
@@ -177,7 +188,8 @@ module.exports = (db) => {
                 distinctTasks: rating.distinctTasks,
                 totalRuns: rating.totalRuns,
                 isProvisional: rating.isProvisional,
-                tier: getRankTier(rating.rating),
+                tier: tierInfo,
+                progress: progressData,
                 topTasks,
                 recentRuns: runsWithPercentile.slice(0, 10)
             });
@@ -294,9 +306,9 @@ module.exports = (db) => {
                 return res.json({ recentRuns: [] });
             }
             
-            // Get the 5 most recent ranked runs for this category
+            // Get more runs to calculate XP deltas (need context)
             const namePlaceholders = taskNames.map(() => '?').join(',');
-            const recentRuns = await db.all(`
+            const allRecentRuns = await db.all(`
                 SELECT 
                     r.id,
                     r.score,
@@ -307,11 +319,15 @@ module.exports = (db) => {
                 WHERE t.name IN (${namePlaceholders})
                   AND r.is_practice = 0
                 ORDER BY r.played_at DESC
-                LIMIT 5
+                LIMIT 30
             `, taskNames);
             
-            // Calculate percentile for each run
-            const runsWithPercentiles = recentRuns.map(run => {
+            // Get category rating for tier info
+            const categoryRating = await aggregateCategoryRating(db, category, 30);
+            const tierInfo = getRankTier(categoryRating.rating);
+            
+            // Calculate percentile and XP for each run
+            const runsWithPercentiles = allRecentRuns.slice(0, 5).map((run, index) => {
                 // Find the leaderboard ID for this task
                 const taskData = Object.values(baselines.tasks)
                     .find(t => t.scenarioName === run.task_name);
@@ -329,6 +345,33 @@ module.exports = (db) => {
                 const tier = getRankTier(percentile);
                 const points = percentileToPoints(percentile);
                 
+                // Calculate XP gain for this run
+                let xpGain = 0;
+                if (categoryRating.rating !== null && !categoryRating.isProvisional) {
+                    // Get previous runs to calculate baseline
+                    const previousRuns = allRecentRuns.slice(index + 1, index + 11);
+                    const previousPercentiles = previousRuns
+                        .map(prevRun => {
+                            const prevTaskData = Object.values(baselines.tasks)
+                                .find(t => t.scenarioName === prevRun.task_name);
+                            if (prevTaskData) {
+                                return scoreToPercentile(prevTaskData.leaderboardId, prevRun.score);
+                            }
+                            return null;
+                        })
+                        .filter(p => p !== null);
+                    
+                    const pBase = previousPercentiles.length > 0
+                        ? previousPercentiles.reduce((sum, p) => sum + p, 0) / previousPercentiles.length
+                        : percentile;
+                    
+                    xpGain = computeRunXpGain({
+                        pNow: percentile,
+                        pBase,
+                        skillTier: tierInfo.tier
+                    });
+                }
+                
                 return {
                     id: run.id,
                     taskName: run.task_name,
@@ -337,7 +380,8 @@ module.exports = (db) => {
                     percentile,
                     points,
                     tier,
-                    leaderboardId: taskData.leaderboardId
+                    leaderboardId: taskData.leaderboardId,
+                    xpGain
                 };
             });
             
