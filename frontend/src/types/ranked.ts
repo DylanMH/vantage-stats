@@ -63,6 +63,7 @@ export type RankTierInfo = {
   minPoints: number;
   maxPoints: number;
   percentileRange: string;
+  img: string;
 };
 
 export type RankedTask = {

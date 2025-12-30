@@ -1,5 +1,7 @@
 import { useMemo } from "react";
 import { useQuery } from "../hooks/useApi";
+import { RankBadge } from "../components/ranked/RankBadge";
+import type { RankedStats } from "../types/ranked";
 
 type UserProfile = {
   username: string;
@@ -49,6 +51,11 @@ export default function Profile() {
   const { data: yesterdayRuns } = useQuery<DayRun[]>("yesterdayRuns", "/api/runs/by-day?day=yesterday", { refetchInterval: 30000 });
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data: runsRaw } = useQuery<any[]>("recentRuns", "/api/runs?limit=5", { refetchInterval: 5000 });
+
+  const { data: rankedStats } = useQuery<RankedStats>(
+    "rankedStats", 
+    "/api/ranked/stats"
+  );
 
   const recent: RunRow[] = useMemo(() => {
     const src = runsRaw ?? [];
@@ -157,7 +164,7 @@ export default function Profile() {
     // For regular goals (higher is better)
     return Math.min(100, Math.round((goal.current_value / goal.target_value) * 100));
   };
-
+  
   return (
     <div className="space-y-4">
       {/* Profile and Goals Cards */}
@@ -165,14 +172,32 @@ export default function Profile() {
         {/* Profile Card */}
         <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
           <h2 className="text-xl font-bold mb-4 text-white">Profile</h2>
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm text-theme-muted">Username</label>
-              <p className="text-lg font-semibold text-white">
-                {profile?.username || "Player"}
-              </p>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <label className="text-sm text-theme-muted">Username</label>
+                <p className="text-lg font-semibold text-white">
+                  {profile?.username || "Player"}
+                </p>
+              </div>
+              {rankedStats?.overall.tier ? (
+                <div className="flex flex-col items-center">
+                  <RankBadge tier={rankedStats.overall.tier} size="small" />
+                  <span className="text-xs text-theme-muted mt-1">Overall Rank</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center">
+                  <div 
+                    className="w-16 h-16 rounded-full flex items-center justify-center border-2 border-dashed"
+                    style={{ borderColor: 'var(--color-border)' }}
+                  >
+                    <span className="text-xs text-center" style={{ color: 'var(--color-text-tertiary)' }}>Unranked</span>
+                  </div>
+                  <span className="text-xs text-theme-muted mt-1">Overall Rank</span>
+                </div>
+              )}
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
               <div>
                 <label className="text-sm text-theme-muted">Total Tasks</label>
                 <p className="text-2xl font-bold text-blue-400">

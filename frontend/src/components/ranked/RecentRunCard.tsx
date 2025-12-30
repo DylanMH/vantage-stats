@@ -1,4 +1,5 @@
 import type { RecentRun } from "../../types/ranked";
+import RankImages from "../../contexts/rankedImages";
 
 function getTimeAgo(date: Date): string {
   const seconds = Math.floor((new Date().getTime() - date.getTime()) / 1000);
@@ -13,6 +14,8 @@ function getTimeAgo(date: Date): string {
 export function RecentRunCard({ run }: { run: RecentRun }) {
   const playedDate = new Date(run.playedAt);
   const timeAgo = getTimeAgo(playedDate);
+
+  const tierImage = RankImages[run.tier?.tier || ''] || '';
   
   return (
     <div 
@@ -35,13 +38,14 @@ export function RecentRunCard({ run }: { run: RecentRun }) {
       {run.tier && (
         <div className="flex items-center gap-2 justify-between">
           <span 
-            className="text-xs font-bold px-2 py-1 rounded"
+            className="flex items-center gap-2 text-xs font-bold px-2 py-1 rounded"
             style={{ 
               background: run.tier.gradient,
               color: run.tier.textColor 
             }}
           >
             {run.tier.tier}
+            <img src={tierImage} alt={run.tier.tier} className="w-4 h-4" />
           </span>
           <div className="flex items-center gap-2">
             {run.xpGain !== undefined && run.xpGain > 0 && (

@@ -1,4 +1,5 @@
 import type { RankTierInfo } from "../../types/ranked";
+import rankImages from "../../contexts/rankedImages";
 
 export function RankLadder({ tiers }: { tiers: RankTierInfo[] }) {
   return (
@@ -27,6 +28,9 @@ export function RankLadder({ tiers }: { tiers: RankTierInfo[] }) {
                 className="text-sm font-bold mb-1"
                 style={{ color: tierInfo.color }}
               >
+                <div className="flex items-center justify-center">
+                  <img src={rankImages[tierInfo.tier]} alt={tierInfo.tier} className="w-12 h-12" />
+                </div>
                 {tierInfo.tier}
               </div>
               <div className="text-xs font-semibold mb-1" style={{ color: 'var(--color-text-primary)' }}>

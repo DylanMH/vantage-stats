@@ -18,6 +18,14 @@ export function CategoryCard({
   );
   
   const recentRuns = recentRunsData?.recentRuns || [];
+
+  const cardHeaderColors: Record<string, string> = {
+    'Flicking': '#a8523f',
+    'Tracking': '#f97316',
+    'Target Switching': '#a855f7',
+  };
+  
+  const headerColor = cardHeaderColors[category] || 'var(--color-text-primary)';
   
   return (
     <div 
@@ -31,7 +39,7 @@ export function CategoryCard({
     >
       <div className="flex items-start justify-between mb-6">
         <div>
-          <h3 className="text-2xl font-bold mb-2" style={{ color: 'var(--color-text-primary)' }}>
+          <h3 className="text-2xl font-bold mb-2" style={{ color: headerColor }}>
             {category}
           </h3>
           {stats.isProvisional && stats.rating !== null && (
