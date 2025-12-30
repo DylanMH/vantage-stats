@@ -2,6 +2,52 @@
 
 All notable changes to Vantage Stats will be documented in this file.
 
+## [1.4.2] - 2025-12-30
+
+### 🎨 Ranked UI Visual Enhancements
+
+#### **Rank Badge System Overhaul**
+
+- **Added Rank Images**: Implemented custom rank badge images for all 8 tiers (Bronze through Champion)
+- **Created Centralized Image Context**: Added `rankedImages.tsx` context for efficient image management
+- **Updated RankBadge Component**: Replaced gradient circles with actual rank images while maintaining fallback support
+- **Enhanced Recent Run Cards**: Added rank images to recent run tier badges for visual consistency
+- **Profile Page Integration**: Added overall rank badge display with clean layout and "Overall Rank" label
+
+#### **Category Card Visual Identity**
+
+- **Distinct Category Colors**: Implemented unique color schemes for each ranked category:
+  - Flicking: `#a8523f` (rust red)
+  - Tracking: `#f97316` (orange)  
+  - Target Switching: `#a855f7` (purple)
+- **Improved Visual Hierarchy**: Category headers now use distinct colors for better navigation
+- **Enhanced Contrast**: Colors chosen to provide excellent contrast against dark theme backgrounds
+
+#### **UI Polish & Consistency**
+
+- **Rank Badge Sizing**: Added responsive sizing (small/medium/large) with appropriate font scaling
+- **Drop Shadow Effects**: Replaced box shadows with filter drop shadows for better image rendering
+- **Fallback Handling**: Graceful degradation to gradient circles when images unavailable
+- **Code Organization**: Centralized rank image imports to reduce duplication across components
+
+### 🔧 Technical Improvements
+
+#### **Component Architecture**
+
+- **Modular Image Management**: Created reusable `rankedImages` context for all rank-related components
+- **Type Safety**: Maintained strict TypeScript typing for all rank image mappings
+- **Performance**: Optimized image imports and reduced redundant code across components
+- **Maintainability**: Single source of truth for rank image assets and mappings
+
+#### **Updated Components**
+
+- `RankBadge.tsx`: Complete overhaul with image support and responsive sizing
+- `CategoryCard.tsx`: Added category-specific color theming
+- `RecentRunCard.tsx`: Integrated rank images into run displays
+- `Profile.tsx`: Added overall rank badge with clean layout
+
+---
+
 ## [1.4.1] - 2025-12-30
 
 ### 🎮 Ranked System: Progress & Rewards
