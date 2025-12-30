@@ -208,5 +208,11 @@ This project is licensed under the Creative Commons Attribution-NonCommercial-Sh
 
 ## 🗺️ Roadmap
 
-- Give me ideas
+- [x] Session tracking and comparison mode
+- [X] Advanced filtering options
+- [ ] Cloud backup/sync (optional)
+- [X] Task specific goals
+
+---
+
 **Made with ❤️ for the aim training community**
