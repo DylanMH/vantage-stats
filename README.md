@@ -12,11 +12,12 @@ A powerful desktop application for tracking, analyzing, and visualizing your FPS
 
 ## ✨ Features
 
-### 📊 **Ranked**
+### ⚔️ **Ranked**
 
 - See your progress in ranked mode
 - Progressive XP system with "real" skill rating
 - Uses baseline data from kovaaks top played tasks for each category
+- Ranks are only local right now but use real data for skill rating
 
 ### 📊 **Performance Tracking**
 
@@ -63,6 +64,7 @@ A powerful desktop application for tracking, analyzing, and visualizing your FPS
 - Manual CSV folder rescanning
 - Settings persistence across sessions
 - Optional playlists folder for easy imports
+- Automatic updates
 
 ## 🚀 Quick Start
 
