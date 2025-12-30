@@ -12,6 +12,12 @@ A powerful desktop application for tracking, analyzing, and visualizing your FPS
 
 ## ✨ Features
 
+### 📊 **Ranked**
+
+- See your progress in ranked mode
+- Progressive XP system with "real" skill rating
+- Uses baseline data from kovaaks top played tasks for each category
+
 ### 📊 **Performance Tracking**
 
 - Automatic import of FPS trainer CSV statistics
@@ -25,12 +31,12 @@ A powerful desktop application for tracking, analyzing, and visualizing your FPS
 - Visual progress tracking with completion percentages
 - Smart goal recommendations
 
-### 📦 **Pack Management**
+### 📦 **Playlist Management**
 
 - Create custom scenario packs
 - Import playlist JSON files as packs
-- Filter stats by pack or individual scenarios
-- Quick-access pack statistics
+- Filter stats by playlist or individual scenarios
+- Quick-access playlist statistics
 
 ### 🎮 **Session Tracking & Comparison**
 
@@ -208,10 +214,7 @@ This project is licensed under the Creative Commons Attribution-NonCommercial-Sh
 
 ## 🗺️ Roadmap
 
-- [x] Session tracking and comparison mode
-- [X] Advanced filtering options
-- [ ] Cloud backup/sync (optional)
-- [X] Task specific goals
+- Give me ideas!
 
 ---
 
