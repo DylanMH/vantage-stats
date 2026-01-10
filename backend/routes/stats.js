@@ -1,13 +1,24 @@
 // backend/routes/stats.js
 const express = require('express');
 const router = express.Router();
+const CacheManager = require('../services/cacheManager');
 const { daysAgoIso } = require('../utils/time');
 
 module.exports = (db) => {
-    // Get global statistics with optional filtering
+    const cacheManager = new CacheManager(db);
+
+    // Get global statistics from cache
     router.get('/global', async (req, res) => {
         try {
             const { days, pack_id, task } = req.query;
+            
+            // For simple overall stats, use cache
+            if (!days && !pack_id && !task) {
+                const cachedStats = await cacheManager.getOverallStats();
+                return res.json(cachedStats);
+            }
+
+            // For complex queries, fall back to original logic (can be cached later)
             const params = [];
             const whereConditions = ['r.is_practice = 0'];
             
@@ -73,7 +84,7 @@ module.exports = (db) => {
         }
     });
 
-    // Overall performance history (all tasks over time)
+    // Overall performance history (optimized)
     router.get('/history', async (req, res) => {
         try {
             const { days, limit = 1000, pack_id } = req.query;
@@ -125,6 +136,26 @@ module.exports = (db) => {
         } catch (e) {
             console.error(e);
             res.status(500).json({ error: 'history lookup failed' });
+        }
+    });
+
+    // Get task-specific stats from cache
+    router.get('/task/:taskId', async (req, res) => {
+        try {
+            const { taskId } = req.params;
+            const cachedStats = await cacheManager.getTaskStats(parseInt(taskId));
+            
+            if (!cachedStats) {
+                // Fallback to calculation if not in cache
+                await cacheManager.updateTaskStats(parseInt(taskId));
+                const stats = await cacheManager.getTaskStats(parseInt(taskId));
+                return res.json(stats);
+            }
+            
+            res.json(cachedStats);
+        } catch (e) {
+            console.error(e);
+            res.status(500).json({ error: 'task stats failed' });
         }
     });
 

@@ -1,4 +1,4 @@
-import type { ComparisonResult } from "../../types/sessions";
+import type { ComparisonResult } from "../../types";
 
 type ComparisonViewProps = {
   result: ComparisonResult;

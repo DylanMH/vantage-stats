@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
-import CloudDownloadIcon from "./icons/CloudDownloadIcon";
-import DocumentIcon from "./icons/DocumentIcon";
-import DownloadIcon from "./icons/DownloadIcon";
+import CloudDownloadIcon from "../icons/CloudDownloadIcon";
+import DocumentIcon from "../icons/DocumentIcon";
+import DownloadIcon from "../icons/DownloadIcon";
 
 type UpdateInfo = {
   version: string;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import type { RankedTasksResponse } from "../../types/ranked";
+import type { RankedTasksResponse } from "../../types";
 import { PlaylistCreatorModal } from "./PlaylistCreatorModal";
 
 type AllRankedTasksCardProps = {

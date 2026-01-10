@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import type { Session } from "../../types/sessions";
-import ConfirmDialog from "../ConfirmDialog";
+import type { Session } from "../../types";
+import ConfirmDialog from "../feedback/ConfirmDialog";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 

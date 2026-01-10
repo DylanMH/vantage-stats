@@ -1,15 +1,14 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useQuery } from '../../hooks/useApi';
-import type { Session, ComparisonResult } from '../../types/sessions';
+import type { Session, ComparisonResult } from '../../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-type SessionComparisonSelectorProps = {
+interface SessionComparisonSelectorProps {
+  sessions: Session[];
   onComparisonComplete: (result: ComparisonResult) => void;
 };
 
-export default function SessionComparisonSelector({ onComparisonComplete }: SessionComparisonSelectorProps) {
-  const { data: sessions } = useQuery<Session[]>('sessions', '/api/sessions');
+export default function SessionComparisonSelector({ sessions, onComparisonComplete }: SessionComparisonSelectorProps) {
   const [leftSessionId, setLeftSessionId] = useState<number | null>(null);
   const [rightSessionId, setRightSessionId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);

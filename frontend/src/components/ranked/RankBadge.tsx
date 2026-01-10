@@ -1,4 +1,4 @@
-import type { Tier } from "../../types/ranked";
+import type { Tier } from "../../types";
 import rankImages from "../../contexts/rankedImages";
 
 export function RankBadge({ tier, size = 'medium' }: { tier: Tier; size?: 'small' | 'medium' | 'large' }) {

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "../hooks/useApi";
 import SessionControl from "../components/sessions/SessionControl";
 import SessionsList from "../components/sessions/SessionsList";
 import QuickPresets from "../components/sessions/QuickPresets";
@@ -6,13 +7,16 @@ import ComparisonView from "../components/sessions/ComparisonView";
 import ComparisonWizard from "../components/sessions/ComparisonWizard";
 import SessionComparisonSelector from "../components/sessions/SessionComparisonSelector";
 import QuickComparisonModal from "../components/sessions/QuickComparisonModal";
-import type { ComparisonResult } from "../types/sessions";
+import type { ComparisonResult, Session } from "../types";
 
 export default function Sessions() {
   const [comparisonResult, setComparisonResult] = useState<ComparisonResult | null>(null);
   const [showWizard, setShowWizard] = useState(false);
   const [quickCompareSessionId, setQuickCompareSessionId] = useState<number | null>(null);
   const [sessionsKey, setSessionsKey] = useState(0); // Key to force SessionsList refresh
+  
+  // Single query for sessions data - passed to all child components
+  const { data: sessions, loading: sessionsLoading } = useQuery<Session[]>('sessions', '/api/sessions');
 
   const handleComparisonRun = (result: ComparisonResult) => {
     setComparisonResult(result);
@@ -40,7 +44,10 @@ export default function Sessions() {
       <SessionControl onSessionEnd={handleSessionEnd} />
 
       {/* Persistent Session Comparison Selector */}
-      <SessionComparisonSelector onComparisonComplete={handleComparisonRun} />
+      <SessionComparisonSelector 
+        sessions={sessions || []}
+        onComparisonComplete={handleComparisonRun} 
+      />
 
       {/* Quick Presets */}
       <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
@@ -68,12 +75,15 @@ export default function Sessions() {
       {/* Recent Sessions */}
       <SessionsList 
         key={sessionsKey}
+        sessions={sessions || []}
+        loading={sessionsLoading}
         onCompare={(sessionId) => setQuickCompareSessionId(sessionId)} 
       />
 
       {/* Comparison Wizard Modal */}
       {showWizard && (
         <ComparisonWizard
+          sessions={sessions || []}
           onClose={() => setShowWizard(false)}
           onComplete={handleComparisonRun}
         />
@@ -82,6 +92,7 @@ export default function Sessions() {
       {/* Quick Comparison Modal */}
       {quickCompareSessionId && (
         <QuickComparisonModal
+          sessions={sessions || []}
           initialSessionId={quickCompareSessionId}
           onClose={() => setQuickCompareSessionId(null)}
           onComplete={handleComparisonRun}

@@ -1,4 +1,4 @@
-import type { ProgressData, Tier } from "../../types/ranked";
+import type { ProgressData, Tier } from "../../types";
 
 export function ProgressBar({ 
   progress, 

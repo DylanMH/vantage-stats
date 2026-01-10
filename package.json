@@ -1,6 +1,6 @@
 {
   "name": "vantage-stats",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "main": "electron/main.js",
   "description": "Vantage Stats - Personal performance tracker for FPS Aim Trainers",
   "repository": {
@@ -26,15 +26,16 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^3.6.2",
+    "@types/node": "^25.0.3",
     "electron": "^39.0.0",
     "electron-builder": "^26.0.12"
   },
   "build": {
     "appId": "com.vantagestats.app",
     "productName": "Vantage Stats",
-    "directories": { "output": "dist" },
-
-
+    "directories": {
+      "output": "dist"
+    },
     "files": [
       "electron/**/*",
       "backend/**/*",
@@ -43,8 +44,6 @@
       "assets/**/*",
       "package.json"
     ],
-
-
     "asar": true,
     "extraResources": [
       {
@@ -52,9 +51,10 @@
         "to": "assets"
       }
     ],
-
     "win": {
-      "target": [ "nsis" ],
+      "target": [
+        "nsis"
+      ],
       "artifactName": "Vantage-Stats-${version}-Setup.${ext}",
       "icon": "assets/vs-icon-logo.ico"
     },
@@ -64,7 +64,9 @@
       "allowToChangeInstallationDirectory": false
     },
     "publish": [
-      { "provider": "github" }
+      {
+        "provider": "github"
+      }
     ]
   }
 }

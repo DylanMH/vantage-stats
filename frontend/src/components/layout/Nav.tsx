@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
-import { usePracticeMode } from "../hooks/usePracticeMode";
-import { useSession } from "../hooks/useSession";
-import logoImg from "../assets/vs-icon-logo.png";
+import { usePracticeMode } from "../../hooks/usePracticeMode";
+import { useSession } from "../../hooks/useSession";
+import logoImg from "../../assets/vs-icon-logo.png";
 
 export default function Nav() {
     const location = useLocation();

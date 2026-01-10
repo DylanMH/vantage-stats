@@ -1,47 +1,8 @@
 import { useMemo } from "react";
 import { useQuery } from "../hooks/useApi";
 import { RankBadge } from "../components/ranked/RankBadge";
-import type { RankedStats } from "../types/ranked";
-
-type UserProfile = {
-  username: string;
-  total_runs: number;
-  total_playtime: number; // seconds
-  unique_tasks?: number;
-};
-
-type Goal = {
-  id: number;
-  title: string;
-  description: string;
-  current_value: number;
-  target_value: number;
-  is_completed: boolean;
-};
-
-type RunRow = {
-  id: number;
-  task: string;
-  accuracy: number | null;
-  score: number | null;
-  shots: number | null;
-  hits: number | null;
-  avg_ttk: number | null;
-  duration: number | null;
-  played_at: string;
-};
-
-type DayRun = {
-  id: number;
-  task_name: string;
-  score: number | null;
-  accuracy: number | null;
-  avg_ttk: number | null;
-  shots: number | null;
-  hits: number | null;
-  duration: number | null;
-  played_at: string;
-};
+import type { RankedStats } from "../types";
+import type { UserProfile, Goal, RunRow, DayRun } from "../types";
 
 export default function Profile() {
   const { data: profile } = useQuery<UserProfile>("profile", "/api/user/profile");

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { jpost } from "../../hooks/useApi";
-import type { RankedTask } from "../../types/ranked";
+import type { RankedTask } from "../../types";
 
 type PlaylistCreatorModalProps = {
   category: string;

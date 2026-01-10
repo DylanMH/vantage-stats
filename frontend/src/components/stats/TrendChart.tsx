@@ -3,7 +3,7 @@ import { Line } from "react-chartjs-2";
 import {
     Chart as ChartJS, LineElement, PointElement, LinearScale, CategoryScale, Legend, Tooltip,
 } from "chart.js";
-import type { Run } from "../types";
+import type { Run } from "../../types";
 
 ChartJS.register(LineElement, PointElement, LinearScale, CategoryScale, Legend, Tooltip);
 

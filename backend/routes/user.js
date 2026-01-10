@@ -1,9 +1,12 @@
 // backend/routes/user.js
 const express = require('express');
 const router = express.Router();
+const CacheManager = require('../services/cacheManager');
 
 module.exports = (db) => {
-    // Get user profile with computed stats from runs
+    const cacheManager = new CacheManager(db);
+
+    // Get user profile with cached stats
     router.get('/profile', async (_req, res) => {
         try {
             let user = await db.get(`SELECT * FROM users WHERE id = 1`);
@@ -13,6 +16,20 @@ module.exports = (db) => {
                 user = await db.get(`SELECT * FROM users WHERE id = 1`);
             }
 
+            // Use cached overall stats
+            const cachedStats = await cacheManager.getOverallStats();
+            
+            if (cachedStats) {
+                const updatedUser = {
+                    ...user,
+                    total_runs: cachedStats.total_runs || 0,
+                    unique_tasks: cachedStats.unique_tasks || 0,
+                    total_playtime: cachedStats.total_duration || 0
+                };
+                return res.json(updatedUser);
+            }
+
+            // Fallback to original calculation if cache not available
             const totalStats = await db.get(`
                 SELECT 
                     COUNT(*) as total_runs, 

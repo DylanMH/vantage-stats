@@ -1,17 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useQuery } from '../../hooks/useApi';
-import type { Session, ComparisonResult } from '../../types/sessions';
+import type { Session, ComparisonResult } from '../../types';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-type QuickComparisonModalProps = {
+interface QuickComparisonModalProps {
+  sessions: Session[];
   initialSessionId: number;
   onClose: () => void;
   onComplete: (result: ComparisonResult) => void;
-};
+}
 
-export default function QuickComparisonModal({ initialSessionId, onClose, onComplete }: QuickComparisonModalProps) {
-  const { data: sessions } = useQuery<Session[]>('sessions', '/api/sessions');
+export default function QuickComparisonModal({ sessions, initialSessionId, onClose, onComplete }: QuickComparisonModalProps) {
   const [leftSessionId, setLeftSessionId] = useState<number>(initialSessionId);
   const [rightSessionId, setRightSessionId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);

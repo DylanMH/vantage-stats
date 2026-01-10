@@ -4,6 +4,7 @@ const express = require('express');
 const path = require('path');
 const events = require('../utils/events');
 const goals = require('../core/goals/goals');
+const { initializeCache } = require('./cacheInitializer');
 
 // ===========================================
 // SSE (Server-Sent Events) for real-time updates
@@ -62,8 +63,23 @@ function startServer(db, port = 3000) {
         });
     });
 
-    // Serve static files from public directory
-    app.use(express.static(path.join(__dirname, '..', 'public')));
+    // Serve static files from public directory with cache headers
+    app.use(express.static(path.join(__dirname, '..', 'public'), {
+        maxAge: '1y', // Cache static assets for 1 year
+        setHeaders: (res, filePath) => {
+            // Set cache control based on file type
+            if (filePath.match(/\.(png|jpg|jpeg|gif|svg|ico|webp)$/i)) {
+                // Images: cache for 1 year (immutable)
+                res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            } else if (filePath.match(/\.(css|js)$/i)) {
+                // CSS/JS: cache for 1 year
+                res.setHeader('Cache-Control', 'public, max-age=31536000');
+            } else if (filePath.match(/\.(woff|woff2|ttf|eot)$/i)) {
+                // Fonts: cache for 1 year
+                res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+            }
+        }
+    }));
 
     // Root quick doc
     app.get('/api', (_req, res) => {
@@ -142,8 +158,15 @@ function startServer(db, port = 3000) {
     const comparisonsRoutes = require('../routes/comparisons')(db);
     const rankedRoutes = require('../routes/ranked')(db);
     const playlistsRoutes = require('../routes/playlists');
+    const exportRoutes = require('../routes/export');
 
     app.set('db', db);
+
+    // Middleware to attach db to requests for export routes
+    app.use((req, res, next) => {
+        req.db = db;
+        next();
+    });
 
     app.use('/api/runs', runsRoutes);
     app.use('/api/stats', statsRoutes);
@@ -156,11 +179,15 @@ function startServer(db, port = 3000) {
     app.use('/api/summary', summaryRoutes);
     app.use('/api/comparisons', comparisonsRoutes);
     app.use('/api/ranked', rankedRoutes);
+    app.use('/api/export', exportRoutes);
     app.use('/api/playlists', playlistsRoutes);
 
     // Initialize default packs and check for goal generation on startup
     app.listen(port, async () => {
         console.log(`server on http://localhost:${port}`);
+        
+        // Initialize performance cache
+        await initializeCache(db);
         
         // Check for goal generation
         console.log('Checking for automatic goal generation...');

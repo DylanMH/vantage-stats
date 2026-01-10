@@ -1,14 +1,14 @@
 import { useState } from "react";
-import { useQuery } from "../../hooks/useApi";
-import type { Session } from "../../types/sessions";
+import type { Session } from "../../types";
 import SessionDetailModal from "./SessionDetailModal";
 
-type SessionsListProps = {
-  onCompare: (sessionId: number) => void;
+interface SessionsListProps {
+  sessions: Session[];
+  loading: boolean;
+  onCompare?: (sessionId: number) => void;
 };
 
-export default function SessionsList({ onCompare }: SessionsListProps) {
-  const { data: sessions, loading, refetch } = useQuery<Session[]>('sessions', '/api/sessions');
+export default function SessionsList({ sessions, loading, onCompare }: SessionsListProps) {
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
 
   const formatDuration = (seconds: number) => {
@@ -126,7 +126,7 @@ export default function SessionsList({ onCompare }: SessionsListProps) {
                   View
                 </button>
                 <button
-                  onClick={() => onCompare(session.id)}
+                  onClick={() => onCompare?.(session.id)}
                   className="px-3 py-2 bg-theme-accent hover:bg-theme-accent/80 text-white rounded-lg font-medium transition-colors whitespace-nowrap text-sm"
                 >
                   Compare
@@ -143,7 +143,6 @@ export default function SessionsList({ onCompare }: SessionsListProps) {
           sessionId={selectedSessionId}
           onClose={() => setSelectedSessionId(null)}
           onUpdate={() => {
-            refetch();
             setSelectedSessionId(null);
           }}
         />

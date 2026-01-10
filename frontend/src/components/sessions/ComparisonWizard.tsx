@@ -1,10 +1,10 @@
 import { useState } from "react";
-import type { ComparisonResult, Session, TaskScope, WindowDefinition } from "../../types/sessions";
-import { useQuery } from "../../hooks/useApi";
+import type { ComparisonResult, Session, TaskScope, WindowDefinition } from "../../types";
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 type ComparisonWizardProps = {
+  sessions: Session[];
   onClose: () => void;
   onComplete: (result: ComparisonResult) => void;
 };
@@ -12,7 +12,7 @@ type ComparisonWizardProps = {
 type Step = 'type' | 'windows';
 type CompareType = 'sessions' | 'timeframes' | 'relative';
 
-export default function ComparisonWizard({ onClose, onComplete }: ComparisonWizardProps) {
+export default function ComparisonWizard({ sessions, onClose, onComplete }: ComparisonWizardProps) {
   const [step, setStep] = useState<Step>('type');
   const [compareType, setCompareType] = useState<CompareType>('timeframes');
   const [leftWindow, setLeftWindow] = useState<WindowDefinition>('yesterday');
@@ -21,8 +21,7 @@ export default function ComparisonWizard({ onClose, onComplete }: ComparisonWiza
   const [loading, setLoading] = useState(false);
   const [blockHours, setBlockHours] = useState(2);
 
-  const { data: sessions } = useQuery<Session[]>('sessions', '/api/sessions');
-  const completedSessions = sessions?.filter(s => s.is_active === 0) || [];
+  const completedSessions = sessions.filter(s => s.is_active === 0);
 
   const handleRunComparison = async () => {
     setLoading(true);

@@ -1,8 +1,9 @@
 import { useState, useMemo } from "react";
-import ChartHost from "../components/ChartHost";
-import TasksTable, { type TaskRow } from "../components/TasksTable";
+import ChartHost from "../components/charts/ChartHost";
+import TasksTable, { type TaskRow } from "../components/tasks/TasksTable";
 import { useQuery } from "../hooks/useApi";
-import type { Playlist } from "../types/playlist";
+import type { Playlist } from "../types";
+import type { RawTask } from "../types";
 
 const formatDuration = (seconds: number) => {
   const hours = Math.floor(seconds / 3600);
@@ -11,22 +12,6 @@ const formatDuration = (seconds: number) => {
     return `${hours}h ${minutes}m`;
   }
   return `${minutes}m`;
-};
-
-type RawTask = {
-  task_name?: string; 
-  task?: string; 
-  filename?: string;
-  runs?: number;
-  avg_accuracy?: number | null;
-  avg_score?: number | null;
-  avg_shots?: number | null;
-  avg_hits?: number | null;
-  avg_ttk?: number | null;
-  avg_duration?: number | null;
-  avg_overshots?: number | null;
-  max_score?: number | null;
-  last_played?: string | null;
 };
 
 export default function Stats() {
@@ -61,6 +46,7 @@ export default function Stats() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPlaylist, timeframe]);
 
+  // Real-time updates for new runs
   const { data: tasksRaw } = useQuery<RawTask[]>("tasksSummary", tasksUrl, { refetchInterval: 5000 });
   const { data: playlists } = useQuery<Playlist[]>("playlists", "/api/playlists");
 

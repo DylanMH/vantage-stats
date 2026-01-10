@@ -11,6 +11,7 @@ const { getSetting, setSetting, getSettingBoolean } = require('../../services/se
 const events = require('../../utils/events');
 const { isRankedTask, scoreToPercentile, aggregateCategoryRating } = require('../../utils/ranked');
 const { updateCategoryProgress } = require('../../utils/rankedProgress');
+const CacheManager = require('../../services/cacheManager');
 
 function deriveMetrics(parsed) {
     const out = { ...parsed };
@@ -55,18 +56,27 @@ async function upsertRun(db, file) {
     // content hash (robust dedupe)
     const hash = await hashFile(file);
 
-    // Check if there's an active session - if so, use its practice mode flag
-    // This ensures runs always match the session they're supposed to be part of
-    const activeSession = await db.get('SELECT is_practice FROM sessions WHERE is_active = 1');
-    let isPracticeMode;
+    // Determine if this is a truly new run or a historical run being rescanned
+    // Check file creation/modification time - if older than 5 minutes, it's historical
+    const fileStats = await fs.stat(file);
+    const fileAge = Date.now() - fileStats.mtimeMs;
+    const isRecentFile = fileAge < 5 * 60 * 1000; // 5 minutes in milliseconds
     
-    if (activeSession) {
-        // Use the session's practice mode to ensure runs are tracked correctly
-        isPracticeMode = activeSession.is_practice === 1;
-    } else {
-        // No active session, use global practice mode setting
-        isPracticeMode = await getSettingBoolean(db, 'practice_mode_active', false);
+    let isPracticeMode = false; // Default to NOT practice mode for historical runs
+    
+    if (isRecentFile) {
+        // Only apply practice mode to recent files (truly new runs)
+        const activeSession = await db.get('SELECT is_practice FROM sessions WHERE is_active = 1');
+        
+        if (activeSession) {
+            // Use the session's practice mode to ensure runs are tracked correctly
+            isPracticeMode = activeSession.is_practice === 1;
+        } else {
+            // No active session, use global practice mode setting
+            isPracticeMode = await getSettingBoolean(db, 'practice_mode_active', false);
+        }
     }
+    // Else: Historical file (older than 5 minutes) - keep isPracticeMode = false
 
     // insert-or-ignore by unique hash
     const wasInserted = await db.run(
@@ -103,6 +113,14 @@ async function upsertRun(db, file) {
     const isNewRun = wasInserted.changes > 0;
     
     if (isNewRun) {
+        // Update performance cache for near real-time stats
+        const cacheManager = new CacheManager(db);
+        await cacheManager.updateOverallStats();
+        await cacheManager.updateTaskStats(task.id);
+        
+        // Queue time stats update (debounced to avoid too frequent updates)
+        setTimeout(() => cacheManager.updateTimeStats(), 5000);
+        
         // Only update goal progress if NOT in practice mode
         if (!isPracticeMode) {
             const runData = {

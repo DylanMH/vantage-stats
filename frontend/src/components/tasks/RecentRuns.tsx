@@ -1,5 +1,5 @@
-import Section from "./ui/Section";
-import { formatScore, formatWhen } from "../utils/format";
+import Section from "../ui/Section";
+import { formatScore, formatWhen } from "../../utils/format";
 
 export type RunRow = {
     id: number;

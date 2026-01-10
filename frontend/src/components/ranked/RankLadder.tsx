@@ -1,4 +1,4 @@
-import type { RankTierInfo } from "../../types/ranked";
+import type { RankTierInfo } from "../../types";
 import rankImages from "../../contexts/rankedImages";
 
 export function RankLadder({ tiers }: { tiers: RankTierInfo[] }) {

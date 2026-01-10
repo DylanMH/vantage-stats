@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useQuery } from "../hooks/useApi";
-import { Skeleton } from "../components/Skeleton";
-import Toast from "../components/Toast";
-import type { RankedStats, RankTierInfo, RankedTasksResponse } from "../types/ranked";
+import { Skeleton } from "../components/helpers/Skeleton";
+import Toast from "../components/feedback/Toast";
+import type { RankedStats, RankTierInfo, RankedTasksResponse } from "../types";
 import { RankBadge } from "../components/ranked/RankBadge";
 import { PointsMeter } from "../components/ranked/PointsMeter";
 import { CategoryCard } from "../components/ranked/CategoryCard";
@@ -12,19 +12,25 @@ import { RankLadder } from "../components/ranked/RankLadder";
 export default function Ranked() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
   
+  // Cache ranked stats for 2 minutes (updates when new ranked runs played)
   const { data: rankedStats, loading: loadingStats } = useQuery<RankedStats>(
     "rankedStats", 
-    "/api/ranked/stats"
+    "/api/ranked/stats",
+    { staleTime: 2 * 60 * 1000 }
   );
   
+  // Cache ranked tasks list for 5 minutes (rarely changes)
   const { data: rankedTasks, loading: loadingTasks } = useQuery<RankedTasksResponse>(
     "rankedTasks",
-    "/api/ranked/tasks"
+    "/api/ranked/tasks",
+    { staleTime: 5 * 60 * 1000 }
   );
   
+  // Cache tier data for 1 hour (static data, rarely changes)
   const { data: tiersData } = useQuery<{ tiers: RankTierInfo[] }>(
     "rankTiers",
-    "/api/ranked/tiers"
+    "/api/ranked/tiers",
+    { staleTime: 60 * 60 * 1000 }
   );
   
   const handleShowToast = (message: string) => {

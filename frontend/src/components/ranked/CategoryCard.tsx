@@ -1,5 +1,5 @@
 import { useQuery } from "../../hooks/useApi";
-import type { CategoryStats, RecentRun } from "../../types/ranked";
+import type { CategoryStats, RecentRun } from "../../types";
 import { RankBadge } from "./RankBadge";
 import { PointsMeter } from "./PointsMeter";
 import { RecentRunCard } from "./RecentRunCard";

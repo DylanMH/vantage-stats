@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
-import Section from "./ui/Section";
+import Section from "../ui/Section";
 import Chart from "./Chart";
-import { getApiUrl } from "../hooks/useApi";
+import { getApiUrl } from "../../hooks/useApi";
 
 type ChartData = {
     played_at: string;

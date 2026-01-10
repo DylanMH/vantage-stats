@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useQuery, getApiUrl } from "../hooks/useApi";
-import Toast from "../components/Toast";
-import ConfirmDialog from "../components/ConfirmDialog";
+import Toast from "../components/feedback/Toast";
+import ConfirmDialog from "../components/feedback/ConfirmDialog";
 import { useTheme } from "../hooks/useTheme";
 import { themes } from "../themes";
 import type { ThemeName } from "../themes";
@@ -14,12 +14,8 @@ declare global {
   }
 }
 
-import type { Playlist } from "../types/playlist";
-
-type ToastMessage = {
-  message: string;
-  type: 'success' | 'error' | 'warning' | 'info';
-};
+import type { Playlist } from "../types";
+import type { ToastMessage } from "../types";
 
 export default function Settings() {
   const { currentTheme, setTheme } = useTheme();
@@ -709,6 +705,64 @@ export default function Settings() {
       <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6">
         <h2 className="text-xl font-bold mb-4 text-white">Data Management</h2>
         <div className="space-y-4">
+          {/* Export Data */}
+          <div className="border-b border-theme-primary pb-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-white">Export Your Data</p>
+                <p className="text-sm text-theme-muted">Backup all your stats to JSON or CSV format</p>
+              </div>
+              <div className="flex gap-2">
+                <button 
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(getApiUrl('/api/export/json'), { method: 'POST' });
+                      if (response.ok) {
+                        const result = await response.json();
+                        setToast({ 
+                          message: `Exported ${result.stats.total_runs} runs to: ${result.path}`, 
+                          type: 'success' 
+                        });
+                      } else {
+                        setToast({ message: 'Export failed', type: 'error' });
+                      }
+                    } catch {
+                      setToast({ message: 'Export failed', type: 'error' });
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  📥 Export JSON
+                </button>
+                <button 
+                  onClick={async () => {
+                    try {
+                      const response = await fetch(getApiUrl('/api/export/csv'), { method: 'POST' });
+                      if (response.ok) {
+                        const result = await response.json();
+                        setToast({ 
+                          message: `Exported ${result.stats.total_runs} runs to CSV: ${result.path}`, 
+                          type: 'success' 
+                        });
+                      } else {
+                        setToast({ message: 'CSV export failed', type: 'error' });
+                      }
+                    } catch {
+                      setToast({ message: 'CSV export failed', type: 'error' });
+                    }
+                  }}
+                  className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+                >
+                  📊 Export CSV
+                </button>
+              </div>
+            </div>
+            <p className="text-xs text-theme-muted mt-2">
+              Exports saved to: AppData\Roaming\vantage-stats\exports\
+            </p>
+          </div>
+
+          {/* Clear Data */}
           <div>
             <div className="flex items-center justify-between">
               <div>

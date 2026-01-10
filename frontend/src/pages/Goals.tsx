@@ -1,28 +1,9 @@
 import { useState } from "react";
 import { useQuery, getApiUrl } from "../hooks/useApi";
-import CreateTaskGoalModal from "../components/CreateTaskGoalModal";
-import CreatePlaylistGoalModal from "../components/CreatePlaylistGoalModal";
-import ConfirmDialog from "../components/ConfirmDialog";
-
-type Goal = {
-  id: number;
-  title: string;
-  description: string;
-  goal_type: string;
-  current_value: number;
-  target_value: number;
-  is_completed: boolean;
-  completed_at?: string;
-  created_at: string;
-  target_task_name?: string;
-  target_pack_id?: number;
-  target_playlist_name?: string;
-  target_timeframe?: number;
-  target_date?: string;
-  is_user_created?: boolean;
-};
-
-type TabType = "overall" | "task" | "playlist";
+import CreateTaskGoalModal from "../components/goals/CreateTaskGoalModal";
+import CreatePlaylistGoalModal from "../components/goals/CreatePlaylistGoalModal";
+import ConfirmDialog from "../components/feedback/ConfirmDialog";
+import type { Goal, TabType } from "../types";
 
 export default function Goals() {
   const [activeTab, setActiveTab] = useState<TabType>("overall");

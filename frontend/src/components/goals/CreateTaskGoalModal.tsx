@@ -1,21 +1,33 @@
 import { useState, useEffect, useCallback } from "react";
-import { getApiUrl } from "../hooks/useApi";
+import { getApiUrl } from "../../hooks/useApi";
 
-import type { Playlist, PlaylistStats } from "../types/playlist";
+type Task = {
+  id: number;
+  name: string;
+  skill_type: string;
+  run_count: number;
+};
 
-type CreatePlaylistGoalModalProps = {
+type TaskStats = {
+  avg_accuracy: number;
+  avg_score: number;
+  avg_ttk: number;
+  total_runs: number;
+};
+
+type CreateTaskGoalModalProps = {
   onClose: () => void;
   onGoalCreated: () => void;
 };
 
-type Step = "selectPlaylist" | "selectMetrics" | "setTarget" | "setDate";
+type Step = "selectTask" | "selectMetrics" | "setTarget" | "setDate";
 type MetricType = "accuracy" | "score" | "ttk";
 
-export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: CreatePlaylistGoalModalProps) {
-  const [step, setStep] = useState<Step>("selectPlaylist");
-  const [playlists, setPlaylists] = useState<Playlist[]>([]);
-  const [selectedPlaylist, setSelectedPlaylist] = useState<Playlist | null>(null);
-  const [playlistStats, setPlaylistStats] = useState<PlaylistStats | null>(null);
+export default function CreateTaskGoalModal({ onClose, onGoalCreated }: CreateTaskGoalModalProps) {
+  const [step, setStep] = useState<Step>("selectTask");
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [taskStats, setTaskStats] = useState<TaskStats | null>(null);
   const [selectedMetrics, setSelectedMetrics] = useState<MetricType[]>([]);
   const [targetValues, setTargetValues] = useState<Record<MetricType, number>>({
     accuracy: 0,
@@ -28,9 +40,9 @@ export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: Crea
 
   // Reset all state when modal opens
   const resetState = useCallback(() => {
-    setStep("selectPlaylist");
-    setSelectedPlaylist(null);
-    setPlaylistStats(null);
+    setStep("selectTask");
+    setSelectedTask(null);
+    setTaskStats(null);
     setSelectedMetrics([]);
     setTargetValues({ accuracy: 0, score: 0, ttk: 0 });
     setTargetDate("");
@@ -43,43 +55,43 @@ export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: Crea
     onClose();
   }, [onClose, resetState]);
 
-  // Load playlists on mount
+  // Load played tasks on mount
   useEffect(() => {
-    const fetchPlaylists = async () => {
+    const fetchTasks = async () => {
       try {
-        const response = await fetch(getApiUrl("/api/playlists"));
+        const response = await fetch(getApiUrl("/api/goals/played-tasks"));
         if (response.ok) {
           const data = await response.json();
-          setPlaylists(data);
+          setTasks(data);
         }
       } catch (err) {
-        console.error("Failed to load playlists:", err);
-        setError("Failed to load playlists");
+        console.error("Failed to load tasks:", err);
+        setError("Failed to load tasks");
       }
     };
-    fetchPlaylists();
+    fetchTasks();
   }, []);
 
-  // Load playlist stats when a playlist is selected
+  // Load task stats when a task is selected
   useEffect(() => {
-    if (selectedPlaylist) {
+    if (selectedTask) {
       const fetchStats = async () => {
         try {
-          const response = await fetch(getApiUrl(`/api/playlists/${selectedPlaylist.id}/stats`));
+          const response = await fetch(getApiUrl(`/api/tasks/${selectedTask.id}/stats`));
           if (response.ok) {
             const data = await response.json();
-            setPlaylistStats(data);
+            setTaskStats(data);
           }
         } catch (err) {
-          console.error("Failed to load playlist stats:", err);
+          console.error("Failed to load task stats:", err);
         }
       };
       fetchStats();
     }
-  }, [selectedPlaylist]);
+  }, [selectedTask]);
 
-  const handlePlaylistSelect = (playlist: Playlist) => {
-    setSelectedPlaylist(playlist);
+  const handleTaskSelect = (task: Task) => {
+    setSelectedTask(task);
     setStep("selectMetrics");
   };
 
@@ -105,7 +117,7 @@ export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: Crea
       // Validate target values
       for (const metric of selectedMetrics) {
         const targetVal = targetValues[metric];
-        const currentVal = playlistStats?.[`avg_${metric}` as keyof PlaylistStats] || 0;
+        const currentVal = taskStats?.[`avg_${metric}` as keyof TaskStats] || 0;
         
         if (!targetVal || targetVal <= 0) {
           setError(`Please set a target value for ${metric}`);
@@ -115,13 +127,13 @@ export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: Crea
         // For TTK, lower is better - target must be LESS than current
         if (metric === 'ttk') {
           if (targetVal >= currentVal) {
-            setError(`TTK target must be lower than current avg (${currentVal.toFixed(3)}s) - lower is better!`);
+            setError(`TTK target must be lower than current (${currentVal.toFixed(3)}s) - lower is better!`);
             return;
           }
         } else {
           // For accuracy and score, higher is better - target must be MORE than current
           if (targetVal <= currentVal) {
-            setError(`${metric.charAt(0).toUpperCase() + metric.slice(1)} target must be higher than current avg (${formatStat(currentVal, metric)})`);
+            setError(`${metric.charAt(0).toUpperCase() + metric.slice(1)} target must be higher than current (${formatStat(currentVal, metric)})`);
             return;
           }
         }
@@ -133,8 +145,8 @@ export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: Crea
 
   const handleBack = () => {
     if (step === "selectMetrics") {
-      setStep("selectPlaylist");
-      setSelectedPlaylist(null);
+      setStep("selectTask");
+      setSelectedTask(null);
     } else if (step === "setTarget") {
       setStep("selectMetrics");
     } else if (step === "setDate") {
@@ -143,7 +155,7 @@ export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: Crea
   };
 
   const handleCreate = async () => {
-    if (!selectedPlaylist || selectedMetrics.length === 0) return;
+    if (!selectedTask || selectedMetrics.length === 0) return;
 
     setLoading(true);
     setError("");
@@ -151,15 +163,15 @@ export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: Crea
     try {
       // Create goals for each selected metric
       for (const metric of selectedMetrics) {
-        const title = `${selectedPlaylist.name} - ${metric.toUpperCase()} Goal`;
-        const currentVal = playlistStats?.[`avg_${metric}` as keyof PlaylistStats] || 0;
+        const title = `${selectedTask.name} - ${metric.toUpperCase()} Goal`;
+        const currentVal = taskStats?.[`avg_${metric}` as keyof TaskStats] || 0;
         const targetVal = targetValues[metric];
         
         let description;
         if (metric === 'ttk') {
-          description = `Improve avg ${metric} for all tasks from ${currentVal.toFixed(3)}s to ${targetVal.toFixed(3)}s`;
+          description = `Improve ${metric} from ${currentVal.toFixed(3)}s to ${targetVal.toFixed(3)}s`;
         } else {
-          description = `Improve avg ${metric} for all tasks from ${currentVal.toFixed(1)} to ${targetVal.toFixed(1)}`;
+          description = `Improve ${metric} from ${currentVal.toFixed(1)} to ${targetVal.toFixed(1)}`;
         }
 
         const response = await fetch(getApiUrl("/api/goals/create"), {
@@ -170,7 +182,7 @@ export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: Crea
             description,
             goal_type: metric,
             target_value: targetVal,
-            target_pack_id: selectedPlaylist.id,
+            target_task_id: selectedTask.id,
             target_date: targetDate || null,
             metrics: selectedMetrics
           })
@@ -202,8 +214,8 @@ export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: Crea
       <div className="bg-theme-secondary border border-theme-primary rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold text-white">
-            Create Playlist Goal
-            {selectedPlaylist && ` - ${selectedPlaylist.name}`}
+            Create Task Goal
+            {selectedTask && ` - ${selectedTask.name}`}
           </h2>
           <button
             onClick={handleClose}
@@ -219,40 +231,31 @@ export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: Crea
           </div>
         )}
 
-        {/* Step 1: Select Playlist */}
-        {step === "selectPlaylist" && (
+        {/* Step 1: Select Task */}
+        {step === "selectTask" && (
           <div>
-            <h3 className="text-lg font-semibold text-white mb-4">Select a Playlist</h3>
-            {playlists.length > 0 ? (
-              <div className="space-y-2 max-h-96 overflow-y-auto">
-                {playlists.map(playlist => (
-                  <button
-                    key={playlist.id}
-                    onClick={() => handlePlaylistSelect(playlist)}
-                    className="w-full text-left bg-theme-tertiary hover:bg-theme-accent hover:bg-opacity-20 border border-theme-primary rounded-lg p-4 transition-colors"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div>
-                        <p className="font-medium text-white">{playlist.name}</p>
-                        {playlist.description && (
-                          <p className="text-sm text-theme-muted">{playlist.description}</p>
-                        )}
-                        {playlist.game_focus && (
-                          <p className="text-xs text-theme-muted mt-1">{playlist.game_focus}</p>
-                        )}
-                      </div>
-                      <div className="text-sm text-theme-muted">
-                        {playlist.task_count} tasks
-                      </div>
+            <h3 className="text-lg font-semibold text-white mb-4">Select a Task</h3>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {tasks.map(task => (
+                <button
+                  key={task.id}
+                  onClick={() => handleTaskSelect(task)}
+                  className="w-full text-left bg-theme-tertiary hover:bg-theme-accent hover:bg-opacity-20 border border-theme-primary rounded-lg p-4 transition-colors"
+                >
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium text-white">{task.name}</p>
+                      {task.skill_type && (
+                        <p className="text-sm text-theme-muted">{task.skill_type}</p>
+                      )}
                     </div>
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-theme-tertiary border border-theme-primary rounded-lg p-8 text-center">
-                <p className="text-theme-muted">No playlists available. Create a playlist first!</p>
-              </div>
-            )}
+                    <div className="text-sm text-theme-muted">
+                      {task.run_count} runs
+                    </div>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
@@ -260,9 +263,6 @@ export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: Crea
         {step === "selectMetrics" && (
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">Select Metrics to Track</h3>
-            <p className="text-sm text-theme-muted mb-4">
-              These metrics will be averaged across all tasks in the playlist
-            </p>
             <div className="space-y-4">
               {(["accuracy", "score", "ttk"] as MetricType[]).map(metric => (
                 <button
@@ -286,9 +286,9 @@ export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: Crea
                     </div>
                     <div className="flex-1">
                       <p className="font-medium text-white capitalize">{metric}</p>
-                      {playlistStats && (
+                      {taskStats && (
                         <p className="text-sm text-theme-muted">
-                          Current Avg: {formatStat(playlistStats[`avg_${metric}` as keyof PlaylistStats], metric)}
+                          Current: {formatStat(taskStats[`avg_${metric}` as keyof TaskStats], metric)}
                         </p>
                       )}
                     </div>
@@ -317,18 +317,15 @@ export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: Crea
         {step === "setTarget" && (
           <div>
             <h3 className="text-lg font-semibold text-white mb-4">Set Target Values</h3>
-            <p className="text-sm text-theme-muted mb-4">
-              Set the target average for all tasks in this playlist
-            </p>
             <div className="space-y-4">
               {selectedMetrics.map(metric => (
                 <div key={metric} className="bg-theme-tertiary border border-theme-primary rounded-lg p-4">
                   <label className="block text-white font-medium mb-2 capitalize">
-                    Average {metric} Goal
+                    {metric} Goal
                   </label>
-                  {playlistStats && (
+                  {taskStats && (
                     <p className="text-sm text-theme-muted mb-3">
-                      Current Avg: {formatStat(playlistStats[`avg_${metric}` as keyof PlaylistStats], metric)}
+                      Current: {formatStat(taskStats[`avg_${metric}` as keyof TaskStats], metric)}
                     </p>
                   )}
                   <input
@@ -346,7 +343,7 @@ export default function CreatePlaylistGoalModal({ onClose, onGoalCreated }: Crea
                     style={{ backgroundColor: '#1a1a1a', color: '#ffffff' }}
                   />
                   {metric === "ttk" && (
-                    <p className="text-xs text-yellow-400 mt-1">⚠️ Lower is better for TTK - set a target below your current avg</p>
+                    <p className="text-xs text-yellow-400 mt-1">⚠️ Lower is better for TTK - set a target below your current time</p>
                   )}
                 </div>
               ))}

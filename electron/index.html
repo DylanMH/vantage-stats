@@ -8,10 +8,26 @@
         <div id="setup-content">
             <p id="status" style="margin-bottom: 20px;">Welcome! Let's get your stats tracking set up.</p>
             <p id="instructions" style="font-size: 14px; opacity: 0.8; margin-bottom: 20px;">
-                Select your FPS trainer stats folder to begin.
+                Choose where to store your data and select your FPS trainer stats folder.
             </p>
             
             <div id="folder-selection">
+                <!-- Data Directory -->
+                <div style="margin-bottom: 20px; border: 2px solid #8b5cf6; border-radius: 5px; padding: 15px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 8px; font-size: 13px; color: #a78bfa;">📁 Data Storage Location</label>
+                    <p style="font-size: 12px; opacity: 0.7; margin-bottom: 8px;">Where Vantage Stats will store your database, backups, and exports</p>
+                    <code id="chosen-data-dir" style="display: block; background: #1b2440; padding: 10px; border-radius: 5px; margin-bottom: 10px; font-size: 12px; word-break: break-all; min-height: 20px;"></code>
+                    <div style="display: flex; gap: 8px;">
+                        <button id="pick-data-dir" style="background: #8b5cf6; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 14px; flex: 1;">
+                            Choose Location
+                        </button>
+                        <button id="use-default-data-dir" style="background: #7c3aed; color: white; border: none; padding: 12px 24px; border-radius: 5px; cursor: pointer; font-size: 14px;">
+                            Use Default
+                        </button>
+                    </div>
+                    <p style="font-size: 11px; opacity: 0.6; margin-top: 8px;">💡 Tip: Choose a location like Desktop or Documents for easy access</p>
+                </div>
+
                 <!-- Stats Folder -->
                 <div style="margin-bottom: 20px;">
                     <label style="display: block; font-weight: bold; margin-bottom: 8px; font-size: 13px;">Stats Folder</label>
@@ -106,8 +122,11 @@
         const os = require('os');
         
         const statusEl = document.getElementById('status');
+        const chosenDataDirEl = document.getElementById('chosen-data-dir');
         const chosenStatsEl = document.getElementById('chosen-stats');
         const chosenPlaylistsEl = document.getElementById('chosen-playlists');
+        const pickDataDirBtn = document.getElementById('pick-data-dir');
+        const useDefaultDataDirBtn = document.getElementById('use-default-data-dir');
         const pickStatsBtn = document.getElementById('pick-stats');
         const pickPlaylistsBtn = document.getElementById('pick-playlists');
         const useDefaultStatsBtn = document.getElementById('use-default-stats');
@@ -122,8 +141,42 @@
         const retryBtn = document.getElementById('retry');
         const folderSelectionEl = document.getElementById('folder-selection');
         
+        let dataDirectory = null;
         let statsFolder = null;
         let playlistsFolder = null;
+
+        // Get default data directory from main process
+        (async () => {
+            try {
+                const defaultPath = await ipcRenderer.invoke('get-default-data-dir');
+                dataDirectory = defaultPath;
+                chosenDataDirEl.textContent = defaultPath;
+            } catch (error) {
+                console.error('Failed to get default data directory:', error);
+                chosenDataDirEl.textContent = 'Error loading default path';
+            }
+        })();
+
+        // Data directory picker
+        pickDataDirBtn.onclick = async () => {
+            const folder = await ipcRenderer.invoke('pick-folder');
+            if (!folder) return;
+            
+            const customDataDir = path.join(folder, 'vantage-stats');
+            dataDirectory = customDataDir;
+            chosenDataDirEl.textContent = customDataDir;
+        };
+
+        // Use default data directory (AppData)
+        useDefaultDataDirBtn.onclick = async () => {
+            try {
+                const defaultPath = await ipcRenderer.invoke('get-default-data-dir');
+                dataDirectory = defaultPath;
+                chosenDataDirEl.textContent = defaultPath;
+            } catch (error) {
+                console.error('Failed to get default data directory:', error);
+            }
+        };
 
         // Detect default Steam paths
         function getDefaultStatsPath() {
@@ -224,17 +277,20 @@
                 return;
             }
             
+            if (!dataDirectory) {
+                showError('Please select a data storage location.');
+                return;
+            }
+            
             continueBtn.disabled = true;
             continueBtn.textContent = 'Setting up...';
             showLoading();
             
-            // Database always lives in userData directory
-            const backendDbPath = path.join(__dirname, '../backend/vantage.db');
-            
             const cfg = {
+                data_directory: dataDirectory, // NEW: Custom data directory
                 stats_path: statsFolder,
                 playlists_path: playlistsFolder || '', // Optional
-                db_path: backendDbPath,
+                db_path: path.join(dataDirectory, 'data', 'vantage.db'), // Store in custom directory
                 port: 3000,
                 auto_goals: autoGoalsCheckbox.checked,
                 auto_import_playlists: autoImportPlaylistsCheckbox.checked

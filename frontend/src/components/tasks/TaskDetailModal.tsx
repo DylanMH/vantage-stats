@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { getApiUrl } from "../hooks/useApi";
+import { getApiUrl } from "../../hooks/useApi";
 
 type TaskDetail = {
   id: number;

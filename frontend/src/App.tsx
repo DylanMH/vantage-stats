@@ -1,19 +1,34 @@
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
-import Nav from "./components/Nav";
-import Profile from "./pages/Profile";
-import Stats from "./pages/Stats";
-import Goals from "./pages/Goals";
-import Sessions from "./pages/Sessions";
-import Settings from "./pages/Settings";
-import Practice from "./pages/Practice";
-import Ranked from "./pages/Ranked";
+import { lazy, Suspense } from "react";
+import Nav from "./components/layout/Nav";
 import { ThemeProvider } from "./contexts/ThemeContext.tsx";
 import { PracticeModeProvider } from "./contexts/PracticeModeContext";
 import { SessionProvider } from "./contexts/SessionContext";
-import GoalNotification from "./components/GoalNotification";
-import UpdateDialog from "./components/UpdateDialog";
+import GoalNotification from "./components/goals/GoalNotification";
+import UpdateDialog from "./components/feedback/UpdateDialog";
 import { useGoalNotifications } from "./hooks/useGoalNotifications";
-import { useRealtimeUpdates } from "./hooks/useRealtimeUpdates";
+import { useRealTimeUpdates } from "./hooks/useRealTimeUpdates";
+
+// Lazy load page components for code splitting
+const Profile = lazy(() => import("./pages/Profile"));
+const Stats = lazy(() => import("./pages/Stats"));
+const Goals = lazy(() => import("./pages/Goals"));
+const Sessions = lazy(() => import("./pages/Sessions"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Practice = lazy(() => import("./pages/Practice"));
+const Ranked = lazy(() => import("./pages/Ranked"));
+
+// Loading fallback component
+function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-theme-accent border-t-transparent mb-4"></div>
+        <p className="text-theme-muted">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 // Dashboard component for the root route - now shows Profile
 function Dashboard() {
@@ -24,24 +39,34 @@ function AppContent() {
   const { notifications, dismissNotification } = useGoalNotifications();
 
   // Listen for real-time updates from backend
-  useRealtimeUpdates(() => {
-    // Dispatch custom event that components can listen to
-    window.dispatchEvent(new CustomEvent('data-updated'));
+  useRealTimeUpdates({
+    onNewRun: () => {
+      // Dispatch custom event that components can listen to
+      window.dispatchEvent(new CustomEvent('data-updated'));
+    },
+    onConnect: () => {
+      console.log('📡 Real-time updates connected globally');
+    },
+    onError: (error: Event) => {
+      console.error('❌ Real-time updates error:', error);
+    }
   });
 
   return (
     <div style={{ backgroundColor: 'var(--color-bg-primary, #0b0f14)', minHeight: '100vh' }}>
       <Nav />
       <main className="max-w-[1600px] mx-auto px-4 pt-8 pb-12">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/stats" element={<Stats />} />
-          <Route path="/practice" element={<Practice />} />
-          <Route path="/ranked" element={<Ranked />} />
-          <Route path="/goals" element={<Goals />} />
-          <Route path="/sessions" element={<Sessions />} />
-          <Route path="/settings" element={<Settings />} />
-        </Routes>
+        <Suspense fallback={<LoadingFallback />}>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/stats" element={<Stats />} />
+            <Route path="/practice" element={<Practice />} />
+            <Route path="/ranked" element={<Ranked />} />
+            <Route path="/goals" element={<Goals />} />
+            <Route path="/sessions" element={<Sessions />} />
+            <Route path="/settings" element={<Settings />} />
+          </Routes>
+        </Suspense>
       </main>
       
       {/* Goal Achievement Notifications */}

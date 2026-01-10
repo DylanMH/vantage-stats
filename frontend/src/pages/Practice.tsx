@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
-import ChartHost from "../components/ChartHost";
-import TasksTable, { type TaskRow } from "../components/TasksTable";
+import ChartHost from "../components/charts/ChartHost";
+import TasksTable, { type TaskRow } from "../components/tasks/TasksTable";
 import { useQuery } from "../hooks/useApi";
 import { usePracticeMode } from "../hooks/usePracticeMode";
-import type { Playlist } from "../types/playlist";
+import type { Playlist } from "../types";
+import type { RawTask } from "../types";
 
 const formatDuration = (seconds: number) => {
   const hours = Math.floor(seconds / 3600);
@@ -14,37 +15,11 @@ const formatDuration = (seconds: number) => {
   return `${minutes}m`;
 };
 
-type RawTask = {
-  task_name?: string; 
-  task?: string; 
-  filename?: string;
-  runs?: number;
-  avg_accuracy?: number | null;
-  avg_score?: number | null;
-  avg_shots?: number | null;
-  avg_hits?: number | null;
-  avg_ttk?: number | null;
-  avg_duration?: number | null;
-  avg_overshots?: number | null;
-  max_score?: number | null;
-  last_played?: string | null;
-};
-
 export default function Practice() {
   const { isPracticeMode, togglePracticeMode, isLoading } = usePracticeMode();
   const [selectedTask, setSelectedTask] = useState("all");
   const [selectedPlaylist, setSelectedPlaylist] = useState<number | null>(null);
   const [timeframe, setTimeframe] = useState("overall");
-
-  const getTimeframeDays = () => {
-    switch (timeframe) {
-      case "day": return 1;
-      case "week": return 7;
-      case "month": return 30;
-      case "overall": return null;
-      default: return null;
-    }
-  };
 
   const tasksUrl = useMemo(() => {
     const params = new URLSearchParams();
@@ -53,16 +28,17 @@ export default function Practice() {
       params.append('pack_id', selectedPlaylist.toString());
     }
     
-    const days = getTimeframeDays();
+    // Convert timeframe to days
+    const days = timeframe === 'day' ? 1 : timeframe === 'week' ? 7 : timeframe === 'month' ? 30 : null;
     if (days !== null) {
       params.append('days', days.toString());
     }
     
     const queryString = params.toString();
     return queryString ? `/api/practice/tasks/summary?${queryString}` : "/api/practice/tasks/summary";
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPlaylist, timeframe]);
 
+  // Real-time updates handled globally in App.tsx
   const { data: tasksRaw } = useQuery<RawTask[]>("practiceTasksSummary", tasksUrl, { refetchInterval: 5000 });
   const { data: playlists } = useQuery<Playlist[]>("playlists", "/api/playlists");
 
@@ -95,15 +71,16 @@ export default function Practice() {
     return filtered;
   }, [tasks, selectedTask]);
 
-  const globalStatsUrl = (() => {
+  const globalStatsUrl = useMemo(() => {
     const params = new URLSearchParams();
-    const days = getTimeframeDays();
+    // Convert timeframe to days
+    const days = timeframe === 'day' ? 1 : timeframe === 'week' ? 7 : timeframe === 'month' ? 30 : null;
     if (days !== null) params.append('days', days.toString());
     if (selectedPlaylist !== null) params.append('pack_id', selectedPlaylist.toString());
     if (selectedTask && selectedTask !== "all") params.append('task', selectedTask);
     const queryString = params.toString();
     return queryString ? `/api/practice/stats?${queryString}` : "/api/practice/stats";
-  })();
+  }, [selectedTask, selectedPlaylist, timeframe]);
 
   const taskNamesUrl = selectedPlaylist !== null 
     ? `/api/tasks/names?pack_id=${selectedPlaylist}`

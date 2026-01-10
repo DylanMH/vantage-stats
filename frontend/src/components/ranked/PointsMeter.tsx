@@ -1,4 +1,4 @@
-import type { Tier } from "../../types/ranked";
+import type { Tier } from "../../types";
 
 export function PointsMeter({ points, tier }: { points: number; tier: Tier }) {
   const currentTierMin = tier.minPoints;

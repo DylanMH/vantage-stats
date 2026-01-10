@@ -1,4 +1,4 @@
-import type { RecentRun } from "../../types/ranked";
+import type { RecentRun } from "../../types";
 import RankImages from "../../contexts/rankedImages";
 
 function getTimeAgo(date: Date): string {
