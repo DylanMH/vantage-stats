@@ -98,6 +98,7 @@ export function useRealTimeUpdates(options: UseRealTimeUpdatesOptions = {}) {
       console.error('Failed to create SSE connection:', error);
       options.onError?.(error as Event);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.onNewRun, options.onStatsUpdated, options.onError, options.onConnect, options.onDisconnect]);
 
   const disconnect = useCallback(() => {
@@ -111,6 +112,7 @@ export function useRealTimeUpdates(options: UseRealTimeUpdatesOptions = {}) {
     }
     reconnectAttemptsRef.current = 0;
     options.onDisconnect?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [options.onDisconnect]);
 
   useEffect(() => {
